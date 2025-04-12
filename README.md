@@ -47,11 +47,25 @@ Follow the interactive prompts to select and export your chats.
 ## Version History
 
 - **v0.1**: Basic setup and authentication
-- **v0.2**: WhatsApp format implementation
+- **v0.2**: Enhanced WhatsApp format implementation (current)
 - **v0.3**: Interactive terminal interface
 - **v0.4**: Customization options
 - **v0.5**: Advanced features
 - **v1.0**: Final release
+
+## Features in v0.2
+
+- Improved WhatsApp format compatibility
+- Enhanced message type handling
+- Support for various media types:
+  - Photos and videos
+  - Documents with file names
+  - Links and web pages
+  - Locations
+  - Contacts
+  - Polls
+- Default message limit of 5000
+- Better error handling
 
 ## Developer
 
