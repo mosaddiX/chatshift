@@ -30,7 +30,9 @@ from rich.style import Style
 from rich.theme import Theme
 from rich.live import Live
 from rich.align import Align
-from rich.box import ROUNDED, DOUBLE, HEAVY
+from rich.box import ROUNDED, DOUBLE, HEAVY, MINIMAL
+from rich.layout import Layout
+from rich.columns import Columns
 
 # Additional styling
 import colorama
@@ -48,19 +50,30 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Create a custom theme for Rich
+# Create a custom theme for Rich - premium and elegant
 custom_theme = Theme({
-    "info": "dim cyan",
-    "warning": "magenta",
-    "danger": "bold red",
-    "success": "bold green",
-    "title": "bold blue",
-    "subtitle": "italic cyan",
-    "highlight": "bold yellow",
-    "user": "bold cyan",
-    "group": "bold green",
-    "channel": "bold magenta",
-    "unread": "bold red",
+    # Base colors
+    "info": "dim #8be9fd",  # Soft cyan
+    "warning": "#bd93f9",   # Soft purple
+    "danger": "#ff5555",    # Soft red
+    "success": "#50fa7b",   # Soft green
+
+    # Text styles
+    "title": "bold #bd93f9",      # Purple for titles
+    "subtitle": "italic #8be9fd",  # Cyan for subtitles
+    "highlight": "#f1fa8c",       # Soft yellow for highlights
+    "muted": "dim #6272a4",      # Muted text
+
+    # Entity types
+    "user": "#8be9fd",      # Cyan for users
+    "group": "#50fa7b",     # Green for groups
+    "channel": "#bd93f9",   # Purple for channels
+    "unread": "#ff5555",    # Red for unread
+
+    # UI elements
+    "border": "#6272a4",     # Soft blue-gray for borders
+    "header": "bold #f8f8f2",  # White for headers
+    "accent": "#ffb86c",     # Soft orange for accents
 })
 
 # Create a console with the custom theme
@@ -88,42 +101,61 @@ class ChatShiftCLI:
         self.client = None
         self.dialogs = []
         self.spinner_chars = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷']
+        self.live_table = None
+        self.table_live = None
 
     def display_logo(self):
-        """Display the ChatShift logo"""
-        # Create a fancy logo with pyfiglet
-        logo = pyfiglet.figlet_format("ChatShift", font="slant")
-        colored_logo = ""
+        """Display the ChatShift logo - elegant and minimal"""
+        # Clear the screen for a clean start
+        os.system('cls' if os.name == 'nt' else 'clear')
 
-        # Add gradient coloring to the logo
-        colors = [Fore.CYAN, Fore.BLUE, Fore.MAGENTA]
-        lines = logo.split('\n')
-        for i, line in enumerate(lines):
-            color_index = i % len(colors)
-            colored_logo += colors[color_index] + line + '\n'
+        # Create a minimal, elegant logo
+        logo = pyfiglet.figlet_format("ChatShift", font="small")
 
-        # Print the logo
-        print(colored_logo)
-
-        # Display version and tagline
-        version_text = Text("v0.4.0", style="italic cyan")
-        tagline = Text("Telegram to WhatsApp Chat Exporter", style="italic")
-        author = Text("Developed by mosaddiX", style="dim")
-
-        # Create a panel with the version info
-        panel = Panel(
-            Group(
-                Align.center(version_text),
-                Align.center(tagline),
-                Align.center(author)
-            ),
-            box=ROUNDED,
-            border_style="cyan",
-            padding=(1, 4)
+        # Create a layout for the header
+        layout = Layout()
+        layout.split_column(
+            Layout(name="logo"),
+            Layout(name="info")
         )
 
-        # Display the panel
-        console.print(panel)
+        # Add the logo with gradient effect
+        logo_text = Text()
+        lines = logo.split('\n')
+        for line in lines:
+            logo_text.append(line, style="gradient('#8be9fd', '#bd93f9')")
+            logo_text.append('\n')
+
+        # Create the logo panel
+        logo_panel = Panel(
+            Align.center(logo_text),
+            box=MINIMAL,
+            border_style="border",
+            padding=(0, 2)
+        )
+
+        # Create the info panel
+        info_panel = Panel(
+            Group(
+                Align.center(Text("v0.4.0", style="subtitle")),
+                Align.center(
+                    Text("Telegram to WhatsApp Chat Exporter", style="muted")),
+                Align.center(Text("Developed by mosaddiX", style="muted"))
+            ),
+            box=MINIMAL,
+            border_style="border",
+            padding=(0, 2)
+        )
+
+        # Add panels to layout
+        layout["logo"].update(logo_panel)
+        layout["info"].update(info_panel)
+
+        # Display the layout
+        console.print(layout)
+
+        # Add some space
+        console.print("")
 
     async def authenticate(self):
         """Authenticate with Telegram"""
@@ -177,46 +209,86 @@ class ChatShiftCLI:
             "[bold green]✓ Successfully authenticated with Telegram![/bold green]")
         return True
 
-    async def get_dialogs(self):
+    async def get_dialogs(self, is_refresh=False):
         """Get all dialogs (chats)"""
-        # Create a panel for the dialog fetching process
-        fetch_panel = Panel(
-            "[bold]Fetching Your Chats[/bold]\n\n"
-            "Retrieving your Telegram conversations...",
-            title="Chats",
-            border_style="cyan",
-            box=ROUNDED
-        )
-        console.print(fetch_panel)
-
         try:
-            # Get all dialogs with a spinner
-            with console.status("[bold cyan]Retrieving chats from Telegram...[/bold cyan]", spinner="dots") as status:
-                self.dialogs = await self.client.get_dialogs()
-                status.update(
-                    f"[bold green]Found {len(self.dialogs)} chats![/bold green]")
-                time.sleep(0.5)
+            # If refreshing, use a more subtle status indicator
+            if is_refresh:
+                with console.status("[info]Updating chat list...[/info]", spinner="dots") as status:
+                    # Get dialogs
+                    self.dialogs = await self.client.get_dialogs()
+                    status.update(
+                        f"[success]Updated! Found {len(self.dialogs)} chats[/success]")
+                    time.sleep(0.3)
+
+                # Update the table in place
+                new_table = self.create_dialogs_table()
+                panel = Panel(
+                    new_table,
+                    title="[title]Chats[/title]",
+                    border_style="border",
+                    box=MINIMAL,
+                    padding=(0, 1)
+                )
+
+                # Clear previous output and show updated table
+                console.print("\n" * 2)  # Add some space
+                console.print(panel)
+
+                # Display help text again
+                help_text = Text()
+                help_text.append("\n")
+                help_text.append("Enter a ", style="muted")
+                help_text.append("number", style="accent")
+                help_text.append(" to select a chat, ", style="muted")
+                help_text.append("r", style="accent")
+                help_text.append(" to refresh, or ", style="muted")
+                help_text.append("q", style="accent")
+                help_text.append(" to quit", style="muted")
+
+                console.print(Align.center(help_text))
+            else:
+                # First time loading - show a more prominent status
+                # Create a panel for the dialog fetching process
+                fetch_panel = Panel(
+                    "[bold]Fetching Your Chats[/bold]\n\n"
+                    "Retrieving your Telegram conversations...",
+                    title="Chats",
+                    border_style="border",
+                    box=MINIMAL
+                )
+                console.print(fetch_panel)
+
+                with console.status("[info]Retrieving chats from Telegram...[/info]", spinner="dots") as status:
+                    self.dialogs = await self.client.get_dialogs()
+                    status.update(
+                        f"[success]Found {len(self.dialogs)} chats![/success]")
+                    time.sleep(0.5)
+
             return True
         except Exception as e:
             console.print(
-                f"[bold red]Error fetching chats:[/bold red] {str(e)}")
+                f"[danger]Error fetching chats:[/danger] {str(e)}")
             return False
 
-    def display_dialogs(self):
-        """Display all dialogs in a numbered list"""
-        # Create a table for the dialogs
+    def create_dialogs_table(self):
+        """Create a table for the dialogs"""
+        # Create a premium-looking table for the dialogs
         table = Table(
             title="Your Telegram Chats",
-            box=ROUNDED,
-            border_style="cyan",
-            header_style="bold cyan",
-            show_lines=True,
-            title_style="bold cyan",
-            expand=True
+            box=MINIMAL,
+            border_style="border",
+            header_style="header",
+            # Alternating row styles for better readability
+            row_styles=["none", "dim"],
+            title_style="title",
+            expand=True,
+            padding=(0, 1),
+            min_width=80
         )
 
-        # Add columns
-        table.add_column("ID", justify="center", style="dim", width=4)
+        # Add columns with elegant styling
+        table.add_column("ID", justify="center", style="muted", width=4)
         table.add_column("Type", justify="center", width=10)
         table.add_column("Name", width=40)
         table.add_column("Unread", justify="center", width=8)
@@ -225,7 +297,7 @@ class ChatShiftCLI:
         for i, dialog in enumerate(self.dialogs, 1):
             entity = dialog.entity
 
-            # Determine entity type and style
+            # Determine entity type and style - using minimal icons for a cleaner look
             if isinstance(entity, User):
                 entity_type = "👤 User"
                 type_style = "user"
@@ -242,7 +314,7 @@ class ChatShiftCLI:
             else:
                 unread = "0"
 
-            # Add row to table
+            # Add row to table with elegant styling
             table.add_row(
                 str(i),
                 f"[{type_style}]{entity_type}[/{type_style}]",
@@ -250,48 +322,71 @@ class ChatShiftCLI:
                 unread
             )
 
-        # Print the table
-        console.print(table)
+        return table
+
+    def display_dialogs(self):
+        """Display all dialogs in a numbered list with live updating"""
+        # Create a panel to wrap the table
+        panel = Panel(
+            self.create_dialogs_table(),
+            title="[title]Chats[/title]",
+            border_style="border",
+            box=MINIMAL,
+            padding=(0, 1)
+        )
+
+        # Store the table for later updates
+        self.live_table = panel
+
+        # Display the panel
+        console.print(panel)
+
+        # Display help text
+        help_text = Text()
+        help_text.append("\n")
+        help_text.append("Enter a ", style="muted")
+        help_text.append("number", style="accent")
+        help_text.append(" to select a chat, ", style="muted")
+        help_text.append("r", style="accent")
+        help_text.append(" to refresh, or ", style="muted")
+        help_text.append("q", style="accent")
+        help_text.append(" to quit", style="muted")
+
+        console.print(Align.center(help_text))
 
     def select_dialog(self):
         """Let the user select a dialog"""
-        # Create a styled prompt
-        options_panel = Panel(
-            "[bold]Options:[/bold]\n\n"
-            "• Enter a [cyan]number[/cyan] to select a chat\n"
-            "• Enter [cyan]r[/cyan] to refresh the chat list\n"
-            "• Enter [cyan]q[/cyan] to quit",
-            title="Chat Selection",
-            border_style="cyan",
-            box=ROUNDED,
-            width=40
-        )
-        console.print(options_panel)
-
         while True:
             try:
-                # Styled input prompt
-                choice = console.input("\n[bold]Enter your choice:[/bold] ")
+                # Styled input prompt with minimal design
+                choice = console.input("\n[bold]>[/bold] ")
 
                 if choice.lower() == 'q':
-                    console.print("[dim]Exiting...[/dim]")
+                    console.print("[muted]Exiting...[/muted]")
                     return None
                 elif choice.lower() == 'r':
-                    console.print("[dim]Refreshing chats...[/dim]")
+                    # Update the table in place instead of printing a new one
+                    console.print("[muted]Refreshing chats...[/muted]")
                     return 'refresh'
 
                 choice = int(choice)
                 if 1 <= choice <= len(self.dialogs):
                     selected = self.dialogs[choice - 1]
-                    console.print(
-                        f"[bold green]Selected:[/bold green] [cyan]{selected.name}[/cyan]")
+                    # Show selection with elegant styling
+                    selection_panel = Panel(
+                        f"Selected: [accent]{selected.name}[/accent]",
+                        box=MINIMAL,
+                        border_style="border",
+                        padding=(0, 1)
+                    )
+                    console.print(selection_panel)
                     return selected
                 else:
                     console.print(
-                        f"[bold yellow]Please enter a number between 1 and {len(self.dialogs)}.[/bold yellow]")
+                        f"[warning]Please enter a number between 1 and {len(self.dialogs)}.[/warning]")
             except ValueError:
                 console.print(
-                    "[bold yellow]Please enter a valid number.[/bold yellow]")
+                    "[warning]Please enter a valid number.[/warning]")
 
     def get_export_options(self):
         """Get export options from the user"""
@@ -569,19 +664,21 @@ class ChatShiftCLI:
         # Authenticate with Telegram
         if not await self.authenticate():
             console.print(
-                "\n[bold red]Authentication failed. Exiting...[/bold red]")
+                "\n[danger]Authentication failed. Exiting...[/danger]")
             return
 
         # Main loop
+        is_first_run = True
         while True:
-            # Get dialogs
-            if not await self.get_dialogs():
-                console.print(
-                    "\n[bold red]Failed to fetch chats. Exiting...[/bold red]")
-                break
-
-            # Display dialogs
-            self.display_dialogs()
+            # Get dialogs - pass is_refresh flag to update in place when refreshing
+            if is_first_run:
+                if not await self.get_dialogs(is_refresh=False):
+                    console.print(
+                        "\n[danger]Failed to fetch chats. Exiting...[/danger]")
+                    break
+                # Display dialogs on first run only
+                self.display_dialogs()
+                is_first_run = False
 
             # Select dialog
             selected_dialog = self.select_dialog()
@@ -590,7 +687,11 @@ class ChatShiftCLI:
                 # User wants to quit
                 break
             elif selected_dialog == 'refresh':
-                # User wants to refresh
+                # User wants to refresh - update in place
+                if not await self.get_dialogs(is_refresh=True):
+                    console.print(
+                        "\n[danger]Failed to refresh chats. Exiting...[/danger]")
+                    break
                 continue
 
             # Get export options
@@ -607,19 +708,20 @@ class ChatShiftCLI:
 
         # Disconnect from Telegram
         if self.client:
-            with console.status("[bold cyan]Disconnecting from Telegram...[/bold cyan]", spinner="dots") as status:
+            with console.status("[info]Disconnecting from Telegram...[/info]", spinner="dots") as status:
                 await self.client.disconnect()
                 time.sleep(0.5)
-                status.update("[bold green]Disconnected![/bold green]")
+                status.update("[success]Disconnected![/success]")
                 time.sleep(0.5)
 
         # Farewell message
         farewell_panel = Panel(
-            "[bold green]Thank you for using ChatShift![/bold green]\n\n"
-            "[italic]Your chats have been exported successfully.[/italic]",
+            "[success]Thank you for using ChatShift![/success]\n\n"
+            "[subtitle]Your chats have been exported successfully.[/subtitle]",
             title="Goodbye",
-            border_style="cyan",
-            box=ROUNDED
+            border_style="border",
+            box=MINIMAL,
+            padding=(1, 2)
         )
         console.print(farewell_panel)
 
