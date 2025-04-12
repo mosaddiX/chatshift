@@ -1,14 +1,18 @@
 # ChatShift
 
-ChatShift is a Python-based tool to export Telegram chats into WhatsApp-like text format with an elegant and simple interactive terminal interface.
+ChatShift is a Python-based tool to export Telegram chats into various text formats with an elegant and simple interactive terminal interface.
 
 ## Features
 
-- Export Telegram chats to WhatsApp-like format
+- Export Telegram chats to multiple formats (WhatsApp, Telegram, Discord, Simple, Custom)
+- Multiple chat export in a single operation
+- Export statistics and summaries
+- Media downloading with filtering options
 - Clean and intuitive command-line interface
 - Customizable export options
 - Support for various message types (text, media, links, etc.)
 - Real-time progress updates during export
+- Performance optimizations for faster processing
 
 ## Installation
 
@@ -35,6 +39,8 @@ MESSAGE_LIMIT=0  # 0 for all messages
 
 You can obtain your Telegram API credentials by creating an application at https://my.telegram.org/apps
 
+For detailed installation instructions, see [INSTALL.md](docs/INSTALL.md).
+
 ## Usage
 
 Run the application:
@@ -44,17 +50,49 @@ python chatshift.py
 
 Follow the interactive prompts to select and export your chats.
 
+For testing the application, see [TESTING.md](docs/TESTING.md).
+
+### Multiple Chat Export
+
+To export multiple chats at once:
+1. Select option 4 "Export multiple chats" from the action menu
+2. Select the chats you want to export by entering their numbers
+3. Use 'v' to view all selected chats in a table format
+4. Enter 'd' when you're done selecting
+5. Configure your export options
+
+The multiple chat selection interface now shows a clean, streamlined view that avoids duplicating the list of selected chats after each selection. Instead, it shows:
+- A confirmation message when a chat is added
+- The current count of selected chats in the prompt
+- A reminder to use 'v' to view all selected chats periodically
+
+### Export Statistics
+
+After exporting a chat, you can generate statistics about the exported messages:
+- Message counts by type (text, media, service)
+- Media counts by type (photos, videos, documents, audio)
+- Top message senders
+- Date range and messages per day
+
 ## Version History
 
 - **v0.1**: Basic setup and authentication
 - **v0.2**: Enhanced WhatsApp format implementation
 - **v0.3**: Interactive terminal interface
 - **v0.4**: Simplified CLI approach
-- **v0.5**: Date range filtering (current)
-- **v1.0**: Final release (planned)
+- **v0.5**: Date range filtering and media options
+- **v1.0**: Multiple chat export, statistics, and performance optimizations (current)
 
-## Features in v0.5 (Current)
+ChatShift has now reached version 1.0, a stable release with all core features implemented. See [RELEASE_NOTES.md](docs/RELEASE_NOTES.md) for details about this release and [ROADMAP.md](docs/ROADMAP.md) for the development history and future plans.
 
+## Features in v1.0 (Current)
+
+- Multiple chat export in a single operation
+- Export statistics and summaries
+- Performance optimizations with batch processing
+- Parallel media downloads for faster processing
+- Multiple export formats (WhatsApp, Telegram, Discord, Simple, Custom)
+- Optional headers in exported files
 - Date range filtering for message exports
 - Ability to filter messages by start and end dates
 - Media type filtering (photos, videos, documents, audio, stickers, voice)
@@ -93,10 +131,14 @@ Follow the interactive prompts to select and export your chats.
 - Default message limit of 5000
 - Better error handling
 
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
+
 ## Developer
 
 Developed by mosaddiX
 
 ## License
 
-MIT License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

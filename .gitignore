@@ -42,6 +42,8 @@ ENV/
 telegram_chat_export.txt
 *.txt
 !requirements.txt
+exports/
+*_stats.txt
 
 # Media files
 media/

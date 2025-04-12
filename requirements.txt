@@ -4,3 +4,4 @@ python-dotenv==1.0.1
 colorama==0.4.6
 termcolor==2.3.0
 pyfiglet==0.8.post1
+setuptools>=65.5.0

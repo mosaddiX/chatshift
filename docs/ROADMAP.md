@@ -34,10 +34,10 @@ This document outlines the planned development path for ChatShift.
 - ❌ Date range filtering (Implemented in v0.5)
 - ❌ Format customization (Moved to v0.5)
 
-## Version 0.5 (Current)
+## Version 0.5 (Completed)
 - ✅ Date range filtering
 - ✅ Include/exclude media options
-- ✅ Output file naming options (Moved to v0.5)
+- ✅ Output file naming options
 - ✅ Custom file naming options with placeholders
 - ✅ Dynamic file name generation based on chat name and date
 - ✅ Format customization
@@ -47,47 +47,36 @@ This document outlines the planned development path for ChatShift.
 - ✅ Media download feature
 - ✅ Improved error handling and recovery
 - ✅ Option to choose between exporting messages, downloading media, or both
-- ✅ Advanced search functionality
-- ❌ Multiple chat export
-- ❌ Export statistics and summaries
-- ❌ Performance optimizations
 
-## Version 1.0 (Planned)
-### Error Handling and Stability
-- Comprehensive error handling for network issues and API limits
-- Session management and recovery
-- Improved authentication error handling
+## Version 1.0 (Current)
+- ✅ Multiple chat export functionality
+- ✅ Improved multiple chat selection interface with streamlined view that avoids duplicate output
+- ✅ Export statistics and summaries
+- ✅ Performance optimizations with batch processing
+- ✅ Parallel media downloads for faster processing
+- ✅ Multiple export format options (WhatsApp, Telegram, Discord, Simple, Custom)
+- ✅ Optional headers in exported files
+- ✅ Improved error handling for network issues
+- ✅ Session management and recovery
+- ✅ Proper package structure with setup.py
+- ✅ Comprehensive documentation
+- ✅ Testing guide
 
-### User Experience Enhancements
-- Multiple export format options (WhatsApp, HTML, JSON, CSV)
-- Preview functionality before export
-
-### Performance Optimizations
-- Batch processing for large chats
-- Caching for frequently accessed data
-- Optimize memory usage for large exports
-- Resume capability for interrupted exports
-
-### Documentation and Help
-- Comprehensive in-app help
-- User guides with screenshots
-- Troubleshooting section
-- First-run wizard
-
-### Installation and Distribution
-- Standalone executables for major platforms
-- Proper PyPI packaging
-- Configuration wizard
-- Cross-platform compatibility testing
+- ❌ Preview functionality before export (postponed for future release)
+- ❌ Caching for frequently accessed data (postponed for future release)
+- ❌ Resume capability for interrupted exports (postponed for future release)
+- ❌ First-run wizard (postponed for future release)
+- ❌ Standalone executables (postponed for future release)
+- ❌ Configuration wizard (postponed for future release)
 
 - ~~TUI interface~~ (Removed: Simplified CLI approach proved more reliable and maintainable)
 
-## Future Ideas
+## Future Ideas [after v1 released]
 - GUI interface option
 - Export to different formats (HTML, PDF)
 - Chat visualization and statistics
 - Integration with other messaging platforms
-- Backup and restore functionality
 - Scheduled exports
 - Batch operations for multiple chats
 - Configuration profiles for different export settings
+- Backup and restore functionality

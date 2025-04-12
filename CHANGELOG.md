@@ -26,10 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User-defined custom format with full control over all formatting aspects
 - Option to include or exclude the header in exported chats
 - Removed WhatsApp encryption message from default header
-- Advanced search functionality with multiple filters
-- Search by text, date, sender, and message type
-- Export search results to file
 - Modular code structure for better maintainability
+- Multiple chat export functionality
+- Improved multiple chat selection interface with streamlined view that avoids duplicate output
+- Export statistics and summaries
+- Performance optimizations with batch processing and parallel downloads
 
 ### Fixed
 - Fixed async context manager issue with status updates

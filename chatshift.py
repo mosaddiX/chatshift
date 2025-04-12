@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """
-ChatShift - Export Telegram chats to WhatsApp-like format
+ChatShift - Export Telegram chats to various text formats
+
+ChatShift allows you to export Telegram chats to multiple formats including
+WhatsApp, Telegram, Discord, and custom formats. It supports multiple chat
+export, statistics generation, and media downloading with filtering options.
 
 This is the main entry point for the ChatShift application.
 Run this file to start the application.
 
 Author: mosaddiX
-Version: 0.5.0
+Version: 1.0.0
 """
 
 import os
@@ -439,39 +443,124 @@ class ChatShiftCLI:
         display = self.create_dialogs_display()
         console.print(display)
 
-    def select_dialog(self):
-        """Let the user select a dialog"""
-        while True:
-            try:
-                # Styled input prompt with minimal design
-                choice = console.input("\n[bold]>[/bold] ")
+    def select_dialog(self, multiple=False):
+        """Let the user select a dialog or multiple dialogs"""
+        if not multiple:
+            # Single dialog selection
+            while True:
+                try:
+                    # Styled input prompt with minimal design
+                    choice = console.input("\n[bold]>[/bold] ")
 
-                if choice.lower() == 'q':
-                    console.print("[muted]Exiting...[/muted]")
-                    return None
-                elif choice.lower() == 'r':
-                    # Update the table in place instead of printing a new one
-                    console.print("[muted]Refreshing chats...[/muted]")
-                    return 'refresh'
+                    if choice.lower() == 'q':
+                        console.print("[muted]Exiting...[/muted]")
+                        return None
+                    elif choice.lower() == 'r':
+                        # Update the table in place instead of printing a new one
+                        console.print("[muted]Refreshing chats...[/muted]")
+                        return 'refresh'
 
-                choice = int(choice)
-                if 1 <= choice <= len(self.dialogs):
-                    selected = self.dialogs[choice - 1]
-                    # Show selection with elegant styling
-                    selection_panel = Panel(
-                        f"Selected: [accent]{selected.name}[/accent]",
-                        box=MINIMAL,
-                        border_style="border",
-                        padding=(0, 1)
-                    )
-                    console.print(selection_panel)
-                    return selected
-                else:
+                    choice = int(choice)
+                    if 1 <= choice <= len(self.dialogs):
+                        selected = self.dialogs[choice - 1]
+                        # Show selection with elegant styling
+                        selection_panel = Panel(
+                            f"Selected: [accent]{selected.name}[/accent]",
+                            box=MINIMAL,
+                            border_style="border",
+                            padding=(0, 1)
+                        )
+                        console.print(selection_panel)
+                        return selected
+                    else:
+                        console.print(
+                            f"[warning]Please enter a number between 1 and {len(self.dialogs)}.[/warning]")
+                except ValueError:
                     console.print(
-                        f"[warning]Please enter a number between 1 and {len(self.dialogs)}.[/warning]")
-            except ValueError:
-                console.print(
-                    "[warning]Please enter a valid number.[/warning]")
+                        "[warning]Please enter a valid number.[/warning]")
+        else:
+            # Multiple dialog selection
+            selected_dialogs = []
+            selected_indices = set()
+
+            console.print("\n[info]Multiple chat selection mode:[/info]")
+            console.print("- Enter a number to select a chat")
+            console.print("- Enter 'd' when you're done selecting")
+            console.print("- Enter 'v' to view all selected chats")
+            console.print("- Enter 'r' to refresh the chat list")
+            console.print("- Enter 'q' to quit")
+
+            while True:
+                try:
+                    # We don't show the full list after each selection to avoid duplication
+                    # Instead, we'll just show the count in the prompt
+
+                    # Styled input prompt with selected chat count
+                    prompt = "\n[bold]>[/bold] "
+                    if selected_dialogs:
+                        prompt = f"\n[bold]Selected: [accent]{len(selected_dialogs)}[/accent] >[/bold] "
+                    choice = console.input(prompt)
+
+                    if choice.lower() == 'q':
+                        console.print("[muted]Exiting...[/muted]")
+                        return None
+                    elif choice.lower() == 'r':
+                        console.print("[muted]Refreshing chats...[/muted]")
+                        return 'refresh'
+                    elif choice.lower() == 'v':
+                        # Show all selected chats in a table
+                        if selected_dialogs:
+                            table = Table(
+                                title=f"All Selected Chats ({len(selected_dialogs)})")
+                            table.add_column("#", style="dim")
+                            table.add_column("Chat Name", style="cyan")
+
+                            for i, dialog in enumerate(selected_dialogs, 1):
+                                table.add_row(str(i), dialog.name)
+
+                            console.print(table)
+                        continue
+                    elif choice.lower() == 'd':
+                        if selected_dialogs:
+                            # Show final selection with elegant styling
+                            selection_panel = Panel(
+                                f"Selected [accent]{len(selected_dialogs)}[/accent] chats",
+                                box=MINIMAL,
+                                border_style="border",
+                                padding=(0, 1)
+                            )
+                            console.print(selection_panel)
+                            return selected_dialogs
+                        else:
+                            console.print(
+                                "[warning]Please select at least one chat.[/warning]")
+                            continue
+
+                    choice = int(choice)
+                    if 1 <= choice <= len(self.dialogs):
+                        if choice - 1 in selected_indices:
+                            console.print(
+                                "[warning]This chat is already selected.[/warning]")
+                        else:
+                            selected = self.dialogs[choice - 1]
+                            selected_dialogs.append(selected)
+                            selected_indices.add(choice - 1)
+
+                            # Show a confirmation for the newly added chat only
+                            console.print(
+                                f"[success]Added:[/success] [accent]{selected.name}[/accent]")
+
+                            # Remind about 'v' command if we have multiple chats
+                            if len(selected_dialogs) > 1 and len(selected_dialogs) % 5 == 0:
+                                console.print(
+                                    "[dim]Remember: Enter 'v' to view all selected chats[/dim]")
+                    else:
+                        console.print(
+                            f"[warning]Please enter a number between 1 and {len(self.dialogs)}.[/warning]")
+                except ValueError:
+                    if choice.lower() not in ['q', 'r', 'd']:
+                        console.print(
+                            "[warning]Please enter a valid number or command.[/warning]")
 
     def get_export_options(self):
         """Get export options from the user"""
@@ -812,10 +901,156 @@ class ChatShiftCLI:
             'format_template': format_template
         }
 
+    async def generate_export_statistics(self, messages, dialog, output_file=None):
+        """Generate statistics about the exported chat"""
+        if not messages:
+            console.print(
+                "[warning]No messages to generate statistics for.[/warning]")
+            return None
+
+        # Count message types
+        total_messages = len(messages)
+        text_messages = sum(1 for m in messages if hasattr(
+            m, 'text') and m.text and not m.media)
+        media_messages = sum(
+            1 for m in messages if hasattr(m, 'media') and m.media)
+        service_messages = sum(
+            1 for m in messages if hasattr(m, 'action') and m.action)
+        edited_messages = sum(1 for m in messages if hasattr(
+            m, 'edit_date') and m.edit_date)
+
+        # Count media types
+        photos = sum(1 for m in messages if hasattr(m, 'media')
+                     and m.media and hasattr(m.media, 'photo') and m.media.photo)
+        videos = sum(1 for m in messages if hasattr(m, 'media') and m.media and hasattr(m.media, 'document')
+                     and m.media.document and m.media.document.mime_type and m.media.document.mime_type.startswith('video/'))
+        documents = sum(1 for m in messages if hasattr(m, 'media') and m.media and hasattr(m.media, 'document') and m.media.document and (
+            not m.media.document.mime_type or not (m.media.document.mime_type.startswith('video/') or m.media.document.mime_type.startswith('audio/'))))
+        audio = sum(1 for m in messages if hasattr(m, 'media') and m.media and hasattr(m.media, 'document')
+                    and m.media.document and m.media.document.mime_type and m.media.document.mime_type.startswith('audio/'))
+
+        # Count messages by sender
+        senders = {}
+        for message in messages:
+            if hasattr(message, 'sender') and message.sender:
+                sender_name = getattr(message.sender, 'first_name', getattr(
+                    message.sender, 'title', 'Unknown'))
+                if hasattr(message.sender, 'last_name') and message.sender.last_name:
+                    sender_name += f" {message.sender.last_name}"
+
+                senders[sender_name] = senders.get(sender_name, 0) + 1
+
+        # Get date range
+        if messages:
+            first_date = min(m.date for m in messages)
+            last_date = max(m.date for m in messages)
+            date_range = (last_date - first_date).days + 1
+            messages_per_day = total_messages / \
+                date_range if date_range > 0 else total_messages
+        else:
+            first_date = last_date = datetime.datetime.now()
+            date_range = 0
+            messages_per_day = 0
+
+        # Create statistics table
+        table = Table(title=f"Chat Statistics: {dialog.name}")
+        table.add_column("Statistic", style="cyan")
+        table.add_column("Value", style="green")
+
+        # Add rows
+        table.add_row("Total Messages", str(total_messages))
+        table.add_row(
+            "Text Messages", f"{text_messages} ({text_messages/total_messages*100:.1f}%)")
+        table.add_row(
+            "Media Messages", f"{media_messages} ({media_messages/total_messages*100:.1f}%)")
+        table.add_row("Service Messages",
+                      f"{service_messages} ({service_messages/total_messages*100:.1f}%)")
+        table.add_row(
+            "Edited Messages", f"{edited_messages} ({edited_messages/total_messages*100:.1f}%)")
+        table.add_row("Photos", str(photos))
+        table.add_row("Videos", str(videos))
+        table.add_row("Documents", str(documents))
+        table.add_row("Audio Files", str(audio))
+        table.add_row(
+            "Date Range", f"{first_date.strftime('%Y-%m-%d')} to {last_date.strftime('%Y-%m-%d')} ({date_range} days)")
+        table.add_row("Messages per Day", f"{messages_per_day:.1f}")
+
+        # Display the table
+        console.print(table)
+
+        # Create top senders table
+        if senders:
+            top_senders = sorted(senders.items(), key=lambda x: x[1], reverse=True)[
+                :10]  # Top 10 senders
+
+            senders_table = Table(title="Top Message Senders")
+            senders_table.add_column("Sender", style="cyan")
+            senders_table.add_column("Messages", style="green")
+            senders_table.add_column("Percentage", style="yellow")
+
+            for sender, count in top_senders:
+                senders_table.add_row(sender, str(
+                    count), f"{count/total_messages*100:.1f}%")
+
+            console.print(senders_table)
+
+        # Export statistics to file if requested
+        if output_file:
+            stats_file = os.path.splitext(output_file)[0] + "_stats.txt"
+
+            with open(stats_file, 'w', encoding='utf-8') as f:
+                f.write(f"Chat Statistics: {dialog.name}\n")
+                f.write(
+                    f"Generated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n")
+
+                f.write(f"Total Messages: {total_messages}\n")
+                f.write(
+                    f"Text Messages: {text_messages} ({text_messages/total_messages*100:.1f}%)\n")
+                f.write(
+                    f"Media Messages: {media_messages} ({media_messages/total_messages*100:.1f}%)\n")
+                f.write(
+                    f"Service Messages: {service_messages} ({service_messages/total_messages*100:.1f}%)\n")
+                f.write(
+                    f"Edited Messages: {edited_messages} ({edited_messages/total_messages*100:.1f}%)\n\n")
+
+                f.write(f"Photos: {photos}\n")
+                f.write(f"Videos: {videos}\n")
+                f.write(f"Documents: {documents}\n")
+                f.write(f"Audio Files: {audio}\n\n")
+
+                f.write(
+                    f"Date Range: {first_date.strftime('%Y-%m-%d')} to {last_date.strftime('%Y-%m-%d')} ({date_range} days)\n")
+                f.write(f"Messages per Day: {messages_per_day:.1f}\n\n")
+
+                f.write("Top Message Senders:\n")
+                for sender, count in top_senders:
+                    f.write(
+                        f"{sender}: {count} ({count/total_messages*100:.1f}%)\n")
+
+            console.print(
+                f"\n[success]Statistics exported to:[/success] [cyan]{stats_file}[/cyan]")
+
+        return {
+            'total_messages': total_messages,
+            'text_messages': text_messages,
+            'media_messages': media_messages,
+            'service_messages': service_messages,
+            'edited_messages': edited_messages,
+            'photos': photos,
+            'videos': videos,
+            'documents': documents,
+            'audio': audio,
+            'first_date': first_date,
+            'last_date': last_date,
+            'date_range': date_range,
+            'messages_per_day': messages_per_day,
+            'senders': senders
+        }
+
     async def export_chat(self, dialog, limit, output_file, start_date=None, end_date=None,
                           include_photos=True, include_videos=True, include_documents=True,
                           include_audio=True, include_stickers=True, include_voice=True,
-                          format_template=None, custom_name_info=None):
+                          format_template=None, custom_name_info=None, generate_stats=False):
         """Export a chat to WhatsApp format"""
         # Create an export panel with details
         export_details = [
@@ -877,72 +1112,96 @@ class ChatShiftCLI:
                 # Initialize counters
                 messages = []
                 message_count = 0
+                batch_size = 100  # Process messages in batches for better performance
 
                 # Show progress message
                 status.update("[bold cyan]Downloading messages...[/bold cyan]")
 
-                # Download messages with progress updates
-                async for message in self.client.iter_messages(dialog.entity, limit=actual_limit):
-                    # Skip messages outside the date range if filters are set
-                    if message and message.date:
-                        # Check start date filter
-                        if start_date and message.date < start_date:
-                            continue
+                # Define filter function for better performance
+                def message_filter(msg):
+                    # Skip messages without date
+                    if not msg or not hasattr(msg, 'date') or not msg.date:
+                        return False
 
-                        # Check end date filter
-                        if end_date and message.date > end_date:
-                            continue
+                    # Check date filters
+                    if start_date and msg.date < start_date:
+                        return False
+                    if end_date and msg.date > end_date:
+                        return False
 
-                        # Check media type filters
-                        if hasattr(message, 'media') and message.media:
-                            # Skip photos if not included
-                            if not include_photos and isinstance(message.media, MessageMediaPhoto):
-                                continue
+                    # Check media type filters
+                    if hasattr(msg, 'media') and msg.media:
+                        # Skip photos if not included
+                        if not include_photos and isinstance(msg.media, MessageMediaPhoto):
+                            return False
 
-                            # Skip videos if not included
-                            if not include_videos and hasattr(message.media, 'document') and \
-                               hasattr(message.media.document, 'mime_type') and \
-                               message.media.document.mime_type and \
-                               message.media.document.mime_type.startswith('video/'):
-                                continue
+                        # Skip videos if not included
+                        if not include_videos and hasattr(msg.media, 'document') and \
+                           hasattr(msg.media.document, 'mime_type') and \
+                           msg.media.document.mime_type and \
+                           msg.media.document.mime_type.startswith('video/'):
+                            return False
 
-                            # Skip documents if not included
-                            if not include_documents and hasattr(message.media, 'document') and \
-                               not (hasattr(message.media.document, 'mime_type') and
-                                    message.media.document.mime_type and
-                                    (message.media.document.mime_type.startswith('video/') or
-                                     message.media.document.mime_type.startswith('audio/'))):
-                                continue
+                        # Skip documents if not included
+                        if not include_documents and hasattr(msg.media, 'document') and \
+                           not (hasattr(msg.media.document, 'mime_type') and
+                                msg.media.document.mime_type and
+                                (msg.media.document.mime_type.startswith('video/') or
+                                 msg.media.document.mime_type.startswith('audio/'))):
+                            return False
 
-                            # Skip audio if not included
-                            if not include_audio and hasattr(message.media, 'document') and \
-                               hasattr(message.media.document, 'mime_type') and \
-                               message.media.document.mime_type and \
-                               message.media.document.mime_type.startswith('audio/') and \
-                               not message.media.document.mime_type.endswith('ogg'):
-                                continue
+                        # Skip audio if not included
+                        if not include_audio and hasattr(msg.media, 'document') and \
+                           hasattr(msg.media.document, 'mime_type') and \
+                           msg.media.document.mime_type and \
+                           msg.media.document.mime_type.startswith('audio/') and \
+                           not msg.media.document.mime_type.endswith('ogg'):
+                            return False
 
-                            # Skip stickers if not included
-                            if not include_stickers and hasattr(message, 'sticker') and message.sticker:
-                                continue
+                        # Skip stickers if not included
+                        if not include_stickers and hasattr(msg, 'sticker') and msg.sticker:
+                            return False
 
-                            # Skip voice messages if not included
-                            if not include_voice and hasattr(message.media, 'document') and \
-                               hasattr(message.media.document, 'mime_type') and \
-                               message.media.document.mime_type and \
-                               message.media.document.mime_type.endswith('ogg'):
-                                continue
+                        # Skip voice messages if not included
+                        if not include_voice and hasattr(msg.media, 'document') and \
+                           hasattr(msg.media.document, 'mime_type') and \
+                           msg.media.document.mime_type and \
+                           msg.media.document.mime_type.endswith('ogg'):
+                            return False
 
-                        # No message type filtering - all message types are included
+                    # Message passed all filters
+                    return True
 
-                        # Include message if it passes all filters
-                        messages.append(message)
+                # Process messages in batches for better performance
+                offset_id = 0
+                while True:
+                    # Get a batch of messages
+                    batch = await self.client.get_messages(dialog.entity, limit=batch_size, offset_id=offset_id)
+                    if not batch:
+                        break
+
+                    # Update offset for next batch
+                    offset_id = batch[-1].id
+
+                    # Filter and add messages
+                    filtered_batch = [
+                        msg for msg in batch if message_filter(msg)]
+                    messages.extend(filtered_batch)
 
                     # Update progress
-                    message_count += 1
-                    if message_count % 50 == 0:
-                        status.update(
-                            f"[bold cyan]Downloaded {message_count} messages...[/bold cyan]")
+                    message_count += len(batch)
+                    status.update(
+                        f"[bold cyan]Downloaded {message_count} messages...[/bold cyan]")
+
+                    # Check if we've reached the limit
+                    if actual_limit > 0 and len(messages) >= actual_limit:
+                        # Trim to exact limit
+                        messages = messages[:actual_limit]
+                        break
+
+                    # Check if we've processed enough messages
+                    if actual_limit > 0 and message_count >= actual_limit * 2:  # Safety check
+                        break
 
                 # Show completion message
                 status.update(
@@ -1022,6 +1281,18 @@ class ChatShiftCLI:
                 box=ROUNDED
             )
             console.print(success_panel)
+
+            # Generate statistics if requested
+            if generate_stats:
+                console.print("\n[bold]Generating chat statistics...[/bold]")
+                await self.generate_export_statistics(messages, dialog, output_file)
+
+            # Ask if user wants to generate statistics
+            gen_stats = console.input(
+                "\n[bold]Do you want to generate chat statistics?[/bold] (y/n): ")
+            if gen_stats.lower() == 'y':
+                console.print("\n[bold]Generating chat statistics...[/bold]")
+                await self.generate_export_statistics(messages, dialog, output_file)
 
             # Ask if user wants to open the file
             open_file = console.input(
@@ -1232,7 +1503,7 @@ class ChatShiftCLI:
 
                     # Ask what the user wants to do with this chat
                     action_panel = Panel(
-                        "[bold]What would you like to do with this chat?[/bold]",
+                        "[bold]What would you like to do?[/bold]",
                         title="Action Options",
                         border_style="cyan",
                         box=ROUNDED
@@ -1246,13 +1517,61 @@ class ChatShiftCLI:
                     console.print(
                         "[dim]3.[/dim] [cyan]Export messages and download media[/cyan]")
                     console.print(
-                        "[dim]4.[/dim] [cyan]Go back to chat selection[/cyan]")
+                        "[dim]4.[/dim] [cyan]Export multiple chats[/cyan]")
+                    console.print(
+                        "[dim]5.[/dim] [cyan]Go back to chat selection[/cyan]")
 
                     action_choice = console.input(
-                        "\n[bold]Enter your choice (1-4):[/bold] ")
+                        "\n[bold]Enter your choice (1-5):[/bold] ")
 
-                    if action_choice == '4':
+                    if action_choice == '5':
                         # Go back to chat selection
+                        continue
+
+                    # Handle multiple chat export
+                    if action_choice == '4':
+                        console.print("\n[bold]Multiple Chat Export[/bold]")
+                        console.print(
+                            "Select multiple chats to export in batch.")
+
+                        # Select multiple dialogs
+                        multiple_dialogs = self.select_dialog(multiple=True)
+
+                        if multiple_dialogs is None:
+                            # User wants to quit
+                            break
+                        elif multiple_dialogs == 'refresh':
+                            # User wants to refresh - update in place
+                            if not await self.get_dialogs(is_refresh=True):
+                                console.print(
+                                    "\n[danger]Failed to refresh chats. Exiting...[/danger]")
+                                break
+                            continue
+
+                        # Get export options
+                        options = self.get_export_options()
+
+                        # Create output directory
+                        output_dir = os.path.join(os.getcwd(), 'exports')
+                        os.makedirs(output_dir, exist_ok=True)
+
+                        # Export multiple chats
+                        await self.export_multiple_chats(
+                            multiple_dialogs,
+                            options['limit'],
+                            output_dir,
+                            options['start_date'],
+                            options['end_date'],
+                            options['include_photos'],
+                            options['include_videos'],
+                            options['include_documents'],
+                            options['include_audio'],
+                            options['include_stickers'],
+                            options['include_voice'],
+                            options['format_template'],
+                            options['custom_name_info'] if options['use_custom_naming'] else None
+                        )
+
                         continue
 
                     # Get export options if needed
@@ -1475,6 +1794,122 @@ class ChatShiftCLI:
                 except Exception:
                     pass
 
+    async def export_multiple_chats(self, dialogs, limit, output_dir, start_date=None, end_date=None,
+                                    include_photos=True, include_videos=True, include_documents=True,
+                                    include_audio=True, include_stickers=True, include_voice=True,
+                                    format_template=None, custom_name_info=None):
+        """Export multiple chats to separate files"""
+        # Create a directory for the exports if it doesn't exist
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Track successful and failed exports
+        successful_exports = []
+        failed_exports = []
+
+        # Create an export panel with details
+        export_details = [
+            f"[bold]Exporting Multiple Chats:[/bold] [cyan]{len(dialogs)} chats[/cyan]",
+            f"[bold]Output Directory:[/bold] [cyan]{output_dir}[/cyan]",
+            f"[bold]Message Limit:[/bold] [cyan]{limit}[/cyan]",
+        ]
+
+        if start_date and end_date:
+            export_details.append(
+                f"[bold]Date Range:[/bold] [cyan]{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}[/cyan]")
+        elif start_date:
+            export_details.append(
+                f"[bold]From Date:[/bold] [cyan]{start_date.strftime('%Y-%m-%d')}[/cyan]")
+        elif end_date:
+            export_details.append(
+                f"[bold]To Date:[/bold] [cyan]{end_date.strftime('%Y-%m-%d')}[/cyan]")
+
+        export_panel = Panel(
+            "\n".join(export_details),
+            title="Multiple Chat Export",
+            border_style="cyan",
+            box=ROUNDED
+        )
+        console.print(export_panel)
+
+        # Process each dialog
+        for i, dialog in enumerate(dialogs, 1):
+            try:
+                # Create a filename for this chat
+                chat_name = dialog.name
+                # Sanitize chat name for file system
+                chat_name = ''.join(
+                    c for c in chat_name if c.isalnum() or c in ' _-').strip()
+                # Replace spaces with underscores
+                chat_name = chat_name.replace(' ', '_')
+
+                # Generate output file path
+                if custom_name_info:
+                    # Apply the pattern
+                    file_name = custom_name_info['pattern'].replace(
+                        "{chat_name}", chat_name)
+
+                    # Replace date and time placeholders
+                    current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                    current_time = datetime.datetime.now().strftime("%H%M")
+                    file_name = file_name.replace(
+                        "{date}", current_date).replace("{time}", current_time)
+
+                    # Add file extension
+                    file_name += custom_name_info['extension']
+                else:
+                    # Default filename
+                    file_name = f"{chat_name}_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}.txt"
+
+                output_file = os.path.join(output_dir, file_name)
+
+                # Show progress
+                console.print(
+                    f"\n[bold][{i}/{len(dialogs)}] Exporting:[/bold] [cyan]{dialog.name}[/cyan]")
+
+                # Export the chat
+                await self.export_chat(
+                    dialog,
+                    limit,
+                    output_file,
+                    start_date,
+                    end_date,
+                    include_photos,
+                    include_videos,
+                    include_documents,
+                    include_audio,
+                    include_stickers,
+                    include_voice,
+                    format_template,
+                    custom_name_info
+                )
+
+                successful_exports.append((dialog.name, output_file))
+
+            except Exception as e:
+                logger.error(f"Error exporting chat {dialog.name}: {str(e)}")
+                failed_exports.append((dialog.name, str(e)))
+                console.print(
+                    f"[danger]Error exporting {dialog.name}: {str(e)}[/danger]")
+
+        # Show summary
+        console.print("\n[bold]Export Summary:[/bold]")
+        console.print(
+            f"[success]Successfully exported:[/success] [cyan]{len(successful_exports)}/{len(dialogs)}[/cyan]")
+
+        if successful_exports:
+            console.print("\n[bold]Successful exports:[/bold]")
+            for name, path in successful_exports:
+                console.print(
+                    f"  [dim]•[/dim] [cyan]{name}[/cyan] → [dim]{path}[/dim]")
+
+        if failed_exports:
+            console.print("\n[bold]Failed exports:[/bold]")
+            for name, error in failed_exports:
+                console.print(
+                    f"  [dim]•[/dim] [danger]{name}[/danger] → [dim]{error}[/dim]")
+
+        return output_dir
+
     async def download_media(self, dialog, limit, output_dir, start_date=None, end_date=None,
                              include_photos=True, include_videos=True, include_documents=True,
                              include_stickers=True):
@@ -1532,40 +1967,63 @@ class ChatShiftCLI:
             # Get messages
             message_count = 0
             media_count = 0
+            batch_size = 100  # Process messages in batches for better performance
 
-            async for message in self.client.iter_messages(dialog, limit=limit):
+            # Define filter function for better performance
+            def media_filter(msg):
                 # Apply date filter if provided
-                if start_date and message.date.replace(tzinfo=None) < start_date:
-                    continue
-                if end_date and message.date.replace(tzinfo=None) >= end_date:
-                    continue
+                if start_date and msg.date.replace(tzinfo=None) < start_date:
+                    return False
+                if end_date and msg.date.replace(tzinfo=None) >= end_date:
+                    return False
 
                 # Check if message has media
-                if message.media:
-                    # Skip media types that are not included
-                    if hasattr(message.media, 'photo') and message.media.photo and not include_photos:
-                        continue
+                if not msg.media:
+                    return False
 
-                    if hasattr(message.media, 'document') and message.media.document:
-                        # Check document type
-                        if hasattr(message.media.document, 'mime_type') and message.media.document.mime_type:
-                            mime_type = message.media.document.mime_type
+                # Skip media types that are not included
+                if hasattr(msg.media, 'photo') and msg.media.photo and not include_photos:
+                    return False
 
-                            # Skip videos if not included
-                            if mime_type.startswith('video/') and not include_videos:
-                                continue
+                if hasattr(msg.media, 'document') and msg.media.document:
+                    # Check document type
+                    if hasattr(msg.media.document, 'mime_type') and msg.media.document.mime_type:
+                        mime_type = msg.media.document.mime_type
 
-                            # Skip documents if not included
-                            if not (mime_type.startswith('image/') or
-                                    mime_type.startswith('video/') or
-                                    mime_type.startswith('audio/')) and not include_documents:
-                                continue
+                        # Skip videos if not included
+                        if mime_type.startswith('video/') and not include_videos:
+                            return False
 
-                        # Skip stickers if not included
-                        if hasattr(message, 'sticker') and message.sticker and not include_stickers:
-                            continue
+                        # Skip documents if not included
+                        if not (mime_type.startswith('image/') or
+                                mime_type.startswith('video/') or
+                                mime_type.startswith('audio/')) and not include_documents:
+                            return False
 
-                    # Download the media
+                    # Skip stickers if not included
+                    if hasattr(msg, 'sticker') and msg.sticker and not include_stickers:
+                        return False
+
+                # Message passed all filters
+                return True
+
+            # Process messages in batches for better performance
+            offset_id = 0
+            while True:
+                # Get a batch of messages
+                batch = await self.client.get_messages(dialog.entity, limit=batch_size, offset_id=offset_id)
+                if not batch:
+                    break
+
+                # Update offset for next batch
+                offset_id = batch[-1].id
+
+                # Filter messages with media
+                media_messages = [msg for msg in batch if media_filter(msg)]
+
+                # Download media files in parallel for better performance
+                download_tasks = []
+                for message in media_messages:
                     try:
                         filename = f"{message.id}"
                         if hasattr(message.media, 'document') and message.media.document and hasattr(message.media.document, 'attributes'):
@@ -1581,11 +2039,19 @@ class ChatShiftCLI:
                             filename = f"{base}_{message.id}{ext}"
                             file_path = os.path.join(output_dir, filename)
 
-                        # Download the file
-                        await message.download_media(file=file_path)
-                        media_count += 1
+                        # Add download task
+                        download_tasks.append(
+                            message.download_media(file=file_path))
+                    except Exception as e:
+                        console.print(
+                            f"[bold red]Error preparing media download:[/bold red] {str(e)}")
 
-                        # Update status
+                # Execute downloads in parallel
+                if download_tasks:
+                    try:
+                        # Use asyncio.gather for parallel downloads
+                        await asyncio.gather(*download_tasks)
+                        media_count += len(download_tasks)
                         status.update(
                             f"[bold cyan]Downloaded {media_count} media files...[/bold cyan]")
                     except Exception as e:
@@ -1593,10 +2059,13 @@ class ChatShiftCLI:
                             f"[bold red]Error downloading media:[/bold red] {str(e)}")
 
                 # Update message count
-                message_count += 1
-                if message_count % 50 == 0:
-                    status.update(
-                        f"[bold cyan]Processed {message_count} messages, downloaded {media_count} media files...[/bold cyan]")
+                message_count += len(batch)
+                status.update(
+                    f"[bold cyan]Processed {message_count} messages, downloaded {media_count} media files...[/bold cyan]")
+
+                # Check if we've reached the limit
+                if limit > 0 and message_count >= limit:
+                    break
 
             # Show completion message
             status.update(
