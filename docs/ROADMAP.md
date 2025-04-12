@@ -40,8 +40,8 @@ This document outlines the planned development path for ChatShift.
 
 ## Version 0.5 (Current)
 - ✅ Date range filtering
+- ✅ Include/exclude media options
 - ❌ Customization options
-- ❌ Include/exclude media options
 - ❌ Format customization
 - ❌ Output file naming options
 - ❌ Message type filtering

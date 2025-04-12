@@ -18,6 +18,7 @@ import datetime
 from dotenv import load_dotenv
 from telethon import TelegramClient
 from telethon.tl.types import User, Chat, Channel, Dialog
+from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument, MessageMediaWebPage
 
 # Rich terminal components
 from rich.console import Console, Group
@@ -421,6 +422,59 @@ class ChatShiftCLI:
         start_date = None
         end_date = None
 
+        # Ask if user wants to filter media types
+        use_media_filter = console.input(
+            "\n[bold]Filter media types?[/bold] (y/n, default: n): ").lower() == 'y'
+
+        # Default to including all media types
+        include_photos = True
+        include_videos = True
+        include_documents = True
+        include_audio = True
+        include_stickers = True
+        include_voice = True
+
+        # If user wants to filter media types, ask for each type
+        if use_media_filter:
+            # Create a panel for media options
+            media_panel = Panel(
+                "[bold]Media Type Filtering[/bold]\n\n"
+                "Select which media types to include in the export.",
+                title="Media Options",
+                border_style="cyan",
+                box=ROUNDED
+            )
+            console.print(media_panel)
+
+            # Ask for each media type
+            include_photos = console.input(
+                "\n[bold]Include photos?[/bold] (y/n, default: y): ").lower() != 'n'
+            include_videos = console.input(
+                "[bold]Include videos?[/bold] (y/n, default: y): ").lower() != 'n'
+            include_documents = console.input(
+                "[bold]Include documents?[/bold] (y/n, default: y): ").lower() != 'n'
+            include_audio = console.input(
+                "[bold]Include audio files?[/bold] (y/n, default: y): ").lower() != 'n'
+            include_stickers = console.input(
+                "[bold]Include stickers?[/bold] (y/n, default: y): ").lower() != 'n'
+            include_voice = console.input(
+                "[bold]Include voice messages?[/bold] (y/n, default: y): ").lower() != 'n'
+
+            # Show summary of selected options
+            console.print("\n[bold]Media types to include:[/bold]")
+            console.print(
+                f"[dim]→ Photos:[/dim] [cyan]{'Yes' if include_photos else 'No'}[/cyan]")
+            console.print(
+                f"[dim]→ Videos:[/dim] [cyan]{'Yes' if include_videos else 'No'}[/cyan]")
+            console.print(
+                f"[dim]→ Documents:[/dim] [cyan]{'Yes' if include_documents else 'No'}[/cyan]")
+            console.print(
+                f"[dim]→ Audio:[/dim] [cyan]{'Yes' if include_audio else 'No'}[/cyan]")
+            console.print(
+                f"[dim]→ Stickers:[/dim] [cyan]{'Yes' if include_stickers else 'No'}[/cyan]")
+            console.print(
+                f"[dim]→ Voice messages:[/dim] [cyan]{'Yes' if include_voice else 'No'}[/cyan]")
+
         if use_date_filter:
             # Get start date with validation
             while True:
@@ -494,10 +548,18 @@ class ChatShiftCLI:
             'limit': limit,
             'output_file': output_file,
             'start_date': start_date,
-            'end_date': end_date
+            'end_date': end_date,
+            'include_photos': include_photos,
+            'include_videos': include_videos,
+            'include_documents': include_documents,
+            'include_audio': include_audio,
+            'include_stickers': include_stickers,
+            'include_voice': include_voice
         }
 
-    async def export_chat(self, dialog, limit, output_file, start_date=None, end_date=None):
+    async def export_chat(self, dialog, limit, output_file, start_date=None, end_date=None,
+                          include_photos=True, include_videos=True, include_documents=True,
+                          include_audio=True, include_stickers=True, include_voice=True):
         """Export a chat to WhatsApp format"""
         # Create an export panel with details
         export_details = [
@@ -513,6 +575,32 @@ class ChatShiftCLI:
         if end_date:
             export_details.append(
                 f"[bold]End Date:[/bold] [cyan]{(end_date - datetime.timedelta(days=1)).strftime('%Y-%m-%d')}[/cyan]")
+
+        # Add media filtering information
+        media_types = []
+        if not (include_photos and include_videos and include_documents and include_audio and include_stickers and include_voice):
+            if include_photos:
+                media_types.append("Photos")
+            if include_videos:
+                media_types.append("Videos")
+            if include_documents:
+                media_types.append("Documents")
+            if include_audio:
+                media_types.append("Audio")
+            if include_stickers:
+                media_types.append("Stickers")
+            if include_voice:
+                media_types.append("Voice")
+
+            if media_types:
+                export_details.append(
+                    f"[bold]Media Types:[/bold] [cyan]{', '.join(media_types)}[/cyan]")
+            else:
+                export_details.append(
+                    f"[bold]Media Types:[/bold] [warning]None (text only)[/warning]")
+        else:
+            export_details.append(
+                f"[bold]Media Types:[/bold] [cyan]All[/cyan]")
 
         export_panel = Panel(
             "\n".join(export_details),
@@ -546,6 +634,46 @@ class ChatShiftCLI:
                         # Check end date filter
                         if end_date and message.date > end_date:
                             continue
+
+                        # Check media type filters
+                        if hasattr(message, 'media') and message.media:
+                            # Skip photos if not included
+                            if not include_photos and isinstance(message.media, MessageMediaPhoto):
+                                continue
+
+                            # Skip videos if not included
+                            if not include_videos and hasattr(message.media, 'document') and \
+                               hasattr(message.media.document, 'mime_type') and \
+                               message.media.document.mime_type and \
+                               message.media.document.mime_type.startswith('video/'):
+                                continue
+
+                            # Skip documents if not included
+                            if not include_documents and hasattr(message.media, 'document') and \
+                               not (hasattr(message.media.document, 'mime_type') and
+                                    message.media.document.mime_type and
+                                    (message.media.document.mime_type.startswith('video/') or
+                                     message.media.document.mime_type.startswith('audio/'))):
+                                continue
+
+                            # Skip audio if not included
+                            if not include_audio and hasattr(message.media, 'document') and \
+                               hasattr(message.media.document, 'mime_type') and \
+                               message.media.document.mime_type and \
+                               message.media.document.mime_type.startswith('audio/') and \
+                               not message.media.document.mime_type.endswith('ogg'):
+                                continue
+
+                            # Skip stickers if not included
+                            if not include_stickers and hasattr(message, 'sticker') and message.sticker:
+                                continue
+
+                            # Skip voice messages if not included
+                            if not include_voice and hasattr(message.media, 'document') and \
+                               hasattr(message.media.document, 'mime_type') and \
+                               message.media.document.mime_type and \
+                               message.media.document.mime_type.endswith('ogg'):
+                                continue
 
                         # Include message if it passes all filters
                         messages.append(message)
@@ -591,6 +719,32 @@ class ChatShiftCLI:
             if end_date:
                 success_details.append(
                     f"[bold]End Date:[/bold] [cyan]{(end_date - datetime.timedelta(days=1)).strftime('%Y-%m-%d')}[/cyan]")
+
+            # Add media filtering information
+            media_types = []
+            if not (include_photos and include_videos and include_documents and include_audio and include_stickers and include_voice):
+                if include_photos:
+                    media_types.append("Photos")
+                if include_videos:
+                    media_types.append("Videos")
+                if include_documents:
+                    media_types.append("Documents")
+                if include_audio:
+                    media_types.append("Audio")
+                if include_stickers:
+                    media_types.append("Stickers")
+                if include_voice:
+                    media_types.append("Voice")
+
+                if media_types:
+                    success_details.append(
+                        f"[bold]Media Types:[/bold] [cyan]{', '.join(media_types)}[/cyan]")
+                else:
+                    success_details.append(
+                        f"[bold]Media Types:[/bold] [warning]None (text only)[/warning]")
+            else:
+                success_details.append(
+                    f"[bold]Media Types:[/bold] [cyan]All[/cyan]")
 
             success_panel = Panel(
                 "\n".join(success_details),
@@ -793,7 +947,13 @@ class ChatShiftCLI:
                 options['limit'],
                 options['output_file'],
                 options['start_date'],
-                options['end_date']
+                options['end_date'],
+                options['include_photos'],
+                options['include_videos'],
+                options['include_documents'],
+                options['include_audio'],
+                options['include_stickers'],
+                options['include_voice']
             )
 
             # Ask if user wants to export another chat

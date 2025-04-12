@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Date range filtering for message exports
 - Ability to filter messages by start and end dates
+- Media type filtering (photos, videos, documents, audio, stickers, voice)
+- Selective media inclusion/exclusion options
 - Enhanced export options interface
 - Improved export details display
 - Date validation with helpful error messages
