@@ -534,12 +534,76 @@ class ChatShiftCLI:
                     console.print(
                         "[bold yellow]Please enter a valid date in YYYY-MM-DD format.[/bold yellow]")
 
-        # Get output file with styled input
-        output_file = console.input(
-            f"\n[bold]Output file[/bold] [dim](default: {DEFAULT_OUTPUT_FILE}):[/dim] ")
+        # Ask for file naming options
+        use_custom_naming = console.input(
+            "\n[bold]Use custom file naming options?[/bold] (y/n, default: n): ").lower() == 'y'
 
-        if not output_file:
-            output_file = DEFAULT_OUTPUT_FILE
+        file_pattern = ""
+        file_extension = ""
+        custom_name_info = ""
+
+        if use_custom_naming:
+            # Create a panel for file naming options
+            file_panel = Panel(
+                "[bold]File Naming Options[/bold]\n\n"
+                "Customize how your exported file will be named.",
+                title="File Options",
+                border_style="cyan",
+                box=ROUNDED
+            )
+            console.print(file_panel)
+
+            # Ask for file name pattern
+            console.print("\n[bold]Available placeholders:[/bold]")
+            console.print("[dim]{chat_name}[/dim] - Name of the chat")
+            console.print("[dim]{date}[/dim] - Current date (YYYY-MM-DD)")
+            console.print("[dim]{time}[/dim] - Current time (HHMM)")
+
+            # Default pattern
+            default_pattern = "{chat_name}_{date}"
+
+            # Get custom pattern
+            file_pattern = console.input(
+                f"\n[bold]File name pattern[/bold] [dim](default: {default_pattern}):[/dim] ")
+
+            if not file_pattern:
+                file_pattern = default_pattern
+
+            # Get file extension
+            extension_input = console.input(
+                "\n[bold]File extension[/bold] [dim](default: txt):[/dim] ")
+
+            if not extension_input:
+                file_extension = ".txt"
+            elif not extension_input.startswith("."):
+                file_extension = "." + extension_input
+            else:
+                file_extension = extension_input
+
+            # Generate output file name based on pattern
+            current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+            current_time = datetime.datetime.now().strftime("%H%M")
+
+            # We'll replace {chat_name} later when we have the selected dialog
+            output_file = file_pattern.replace(
+                "{date}", current_date).replace("{time}", current_time)
+
+            # Store the pattern for later use
+            custom_name_info = file_pattern + file_extension
+
+            # For now, use a temporary name - we'll update it when we know the chat name
+            output_file = output_file.replace(
+                "{chat_name}", "CHAT") + file_extension
+
+            console.print(
+                f"[dim]→ File name pattern:[/dim] [cyan]{custom_name_info}[/cyan]")
+        else:
+            # Get output file with styled input (traditional way)
+            output_file = console.input(
+                f"\n[bold]Output file[/bold] [dim](default: {DEFAULT_OUTPUT_FILE}):[/dim] ")
+
+            if not output_file:
+                output_file = DEFAULT_OUTPUT_FILE
 
         # Show confirmation of the output file
         console.print(f"[dim]→ Will save to[/dim] [cyan]{output_file}[/cyan]")
@@ -554,12 +618,17 @@ class ChatShiftCLI:
             'include_documents': include_documents,
             'include_audio': include_audio,
             'include_stickers': include_stickers,
-            'include_voice': include_voice
+            'include_voice': include_voice,
+            'use_custom_naming': use_custom_naming,
+            'file_pattern': file_pattern,
+            'file_extension': file_extension,
+            'custom_name_info': custom_name_info
         }
 
     async def export_chat(self, dialog, limit, output_file, start_date=None, end_date=None,
                           include_photos=True, include_videos=True, include_documents=True,
-                          include_audio=True, include_stickers=True, include_voice=True):
+                          include_audio=True, include_stickers=True, include_voice=True,
+                          custom_name_info=None):
         """Export a chat to WhatsApp format"""
         # Create an export panel with details
         export_details = [
@@ -745,6 +814,11 @@ class ChatShiftCLI:
             else:
                 success_details.append(
                     f"[bold]Media Types:[/bold] [cyan]All[/cyan]")
+
+            # Add file naming information if custom naming was used
+            if custom_name_info:
+                success_details.append(
+                    f"[bold]File Naming Pattern:[/bold] [cyan]{custom_name_info}[/cyan]")
 
             success_panel = Panel(
                 "\n".join(success_details),
@@ -941,6 +1015,37 @@ class ChatShiftCLI:
             # Get export options
             options = self.get_export_options()
 
+            # Handle custom file naming if enabled
+            output_file = options['output_file']
+            if options['use_custom_naming'] and options['file_pattern']:
+                # Replace {chat_name} with the actual chat name
+                chat_name = selected_dialog.name
+                # Sanitize chat name for file system
+                chat_name = ''.join(
+                    c for c in chat_name if c.isalnum() or c in ' _-').strip()
+                # Replace spaces with underscores
+                chat_name = chat_name.replace(' ', '_')
+
+                # Apply the pattern
+                output_file = options['file_pattern'].replace(
+                    "{chat_name}", chat_name)
+
+                # Replace date and time placeholders
+                current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                current_time = datetime.datetime.now().strftime("%H%M")
+                output_file = output_file.replace(
+                    "{date}", current_date).replace("{time}", current_time)
+
+                # Add file extension
+                output_file += options['file_extension']
+
+                # Update the output file in options
+                options['output_file'] = output_file
+
+                # Show the final file name
+                console.print(
+                    f"[dim]→ Final file name:[/dim] [cyan]{output_file}[/cyan]")
+
             # Export chat
             await self.export_chat(
                 selected_dialog,
@@ -953,7 +1058,8 @@ class ChatShiftCLI:
                 options['include_documents'],
                 options['include_audio'],
                 options['include_stickers'],
-                options['include_voice']
+                options['include_voice'],
+                options['custom_name_info'] if options['use_custom_naming'] else None
             )
 
             # Ask if user wants to export another chat

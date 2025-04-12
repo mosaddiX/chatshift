@@ -33,7 +33,6 @@ This document outlines the planned development path for ChatShift.
 - ✅ In-place table refresh functionality
 - ❌ Customization options (Moved to v0.5)
 - ❌ Date range filtering (Implemented in v0.5)
-- ❌ Include/exclude media options (Moved to v0.5)
 - ❌ Format customization (Moved to v0.5)
 - ❌ Output file naming options (Moved to v0.5)
 - ❌ Message type filtering (Moved to v0.5)
@@ -41,9 +40,9 @@ This document outlines the planned development path for ChatShift.
 ## Version 0.5 (Current)
 - ✅ Date range filtering
 - ✅ Include/exclude media options
+- ✅ Output file naming options
 - ❌ Customization options
 - ❌ Format customization
-- ❌ Output file naming options
 - ❌ Message type filtering
 - ❌ Advanced search functionality
 - ❌ Message content filtering
