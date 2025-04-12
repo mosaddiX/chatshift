@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved error handling for async operations
 - Fixed chat list refresh when selecting to process another chat
 - Improved user experience when continuing after cancellation
+- Improved media download organization with chat-specific subdirectories
+- Added .gitignore rules to prevent media files from being tracked by Git
 
 ### Removed
 - Message type filtering (text, media, service, forwarded, replies) due to implementation issues

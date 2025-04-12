@@ -1122,8 +1122,23 @@ class ChatShiftCLI:
                     # Download media if requested
                     if action_choice in ['2', '3']:
                         # Ask for media download options
+                        # Default to a 'media' subdirectory in the current directory
+                        default_media_dir = os.path.join(os.getcwd(), 'media')
                         output_dir = console.input(
-                            "\n[bold]Enter output directory for media files:[/bold] (default: 'media'): ") or 'media'
+                            f"\n[bold]Enter output directory for media files:[/bold] (default: '{default_media_dir}'): ") or default_media_dir
+
+                        # Create a subdirectory with the chat name for better organization
+                        chat_name = selected_dialog.name
+                        # Sanitize chat name for file system
+                        chat_name = ''.join(
+                            c for c in chat_name if c.isalnum() or c in ' _-').strip()
+                        # Replace spaces with underscores
+                        chat_name = chat_name.replace(' ', '_')
+
+                        # Create a subdirectory for this specific chat
+                        output_dir = os.path.join(output_dir, chat_name)
+                        console.print(
+                            f"[dim]→ Media will be saved to:[/dim] [cyan]{output_dir}[/cyan]")
 
                         # Ask for media type filtering
                         use_media_filter = console.input(
