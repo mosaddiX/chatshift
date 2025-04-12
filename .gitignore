@@ -47,6 +47,8 @@ exports/
 
 # Media files
 media/
+images/*
+!images/welcome.png
 *.jpg
 *.jpeg
 *.png
