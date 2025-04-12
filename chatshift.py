@@ -15,6 +15,8 @@ import time
 import asyncio
 import logging
 import datetime
+import mimetypes
+from pathlib import Path
 from dotenv import load_dotenv
 from telethon import TelegramClient
 from telethon.tl.types import User, Chat, Channel, Dialog
@@ -34,6 +36,8 @@ from rich.align import Align
 from rich.box import ROUNDED, DOUBLE, HEAVY, MINIMAL
 from rich.layout import Layout
 from rich.columns import Columns
+from rich.status import Status
+from contextlib import contextmanager
 
 # Additional styling
 import colorama
@@ -97,6 +101,17 @@ USERNAME = os.getenv('TELEGRAM_USERNAME')
 # Default export settings
 DEFAULT_OUTPUT_FILE = os.getenv('OUTPUT_FILE', 'telegram_chat_export.txt')
 DEFAULT_MESSAGE_LIMIT = int(os.getenv('MESSAGE_LIMIT', '5000'))
+
+
+@contextmanager
+async def status_context(message):
+    """Context manager for status updates"""
+    status = Status(message, console=console)
+    status.start()
+    try:
+        yield status
+    finally:
+        status.stop()
 
 
 class ChatShiftCLI:
@@ -434,16 +449,7 @@ class ChatShiftCLI:
         include_stickers = True
         include_voice = True
 
-        # Ask if user wants to filter message types
-        use_message_filter = console.input(
-            "\n[bold]Filter message types?[/bold] (y/n, default: n): ").lower() == 'y'
-
-        # Default to including all message types
-        include_text = True
-        include_media = True
-        include_service = True
-        include_forwarded = True
-        include_replies = True
+        # No message type filtering - all message types are included by default
 
         # If user wants to filter media types, ask for each type
         if use_media_filter:
@@ -486,42 +492,7 @@ class ChatShiftCLI:
             console.print(
                 f"[dim]→ Voice messages:[/dim] [cyan]{'Yes' if include_voice else 'No'}[/cyan]")
 
-        # If user wants to filter message types, ask for each type
-        if use_message_filter:
-            # Create a panel for message type options
-            message_panel = Panel(
-                "[bold]Message Type Filtering[/bold]\n\n"
-                "Select which message types to include in the export.",
-                title="Message Options",
-                border_style="cyan",
-                box=ROUNDED
-            )
-            console.print(message_panel)
-
-            # Ask for each message type
-            include_text = console.input(
-                "\n[bold]Include text messages?[/bold] (y/n, default: y): ").lower() != 'n'
-            include_media = console.input(
-                "[bold]Include media messages?[/bold] (y/n, default: y): ").lower() != 'n'
-            include_service = console.input(
-                "[bold]Include service messages?[/bold] (y/n, default: y): ").lower() != 'n'
-            include_forwarded = console.input(
-                "[bold]Include forwarded messages?[/bold] (y/n, default: y): ").lower() != 'n'
-            include_replies = console.input(
-                "[bold]Include replies?[/bold] (y/n, default: y): ").lower() != 'n'
-
-            # Show summary of selected options
-            console.print("\n[bold]Message types to include:[/bold]")
-            console.print(
-                f"[dim]→ Text messages:[/dim] [cyan]{'Yes' if include_text else 'No'}[/cyan]")
-            console.print(
-                f"[dim]→ Media messages:[/dim] [cyan]{'Yes' if include_media else 'No'}[/cyan]")
-            console.print(
-                f"[dim]→ Service messages:[/dim] [cyan]{'Yes' if include_service else 'No'}[/cyan]")
-            console.print(
-                f"[dim]→ Forwarded messages:[/dim] [cyan]{'Yes' if include_forwarded else 'No'}[/cyan]")
-            console.print(
-                f"[dim]→ Replies:[/dim] [cyan]{'Yes' if include_replies else 'No'}[/cyan]")
+        # No message type filtering UI - all message types are included by default
 
         if use_date_filter:
             # Get start date with validation
@@ -667,11 +638,6 @@ class ChatShiftCLI:
             'include_audio': include_audio,
             'include_stickers': include_stickers,
             'include_voice': include_voice,
-            'include_text': include_text,
-            'include_media': include_media,
-            'include_service': include_service,
-            'include_forwarded': include_forwarded,
-            'include_replies': include_replies,
             'use_custom_naming': use_custom_naming,
             'file_pattern': file_pattern,
             'file_extension': file_extension,
@@ -681,8 +647,6 @@ class ChatShiftCLI:
     async def export_chat(self, dialog, limit, output_file, start_date=None, end_date=None,
                           include_photos=True, include_videos=True, include_documents=True,
                           include_audio=True, include_stickers=True, include_voice=True,
-                          include_text=True, include_media=True, include_service=True,
-                          include_forwarded=True, include_replies=True,
                           custom_name_info=None):
         """Export a chat to WhatsApp format"""
         # Create an export panel with details
@@ -726,29 +690,7 @@ class ChatShiftCLI:
             export_details.append(
                 f"[bold]Media Types:[/bold] [cyan]All[/cyan]")
 
-        # Add message type filtering information
-        message_types = []
-        if not (include_text and include_media and include_service and include_forwarded and include_replies):
-            if include_text:
-                message_types.append("Text")
-            if include_media:
-                message_types.append("Media")
-            if include_service:
-                message_types.append("Service")
-            if include_forwarded:
-                message_types.append("Forwarded")
-            if include_replies:
-                message_types.append("Replies")
-
-            if message_types:
-                export_details.append(
-                    f"[bold]Message Types:[/bold] [cyan]{', '.join(message_types)}[/cyan]")
-            else:
-                export_details.append(
-                    f"[bold]Message Types:[/bold] [warning]None (empty export)[/warning]")
-        else:
-            export_details.append(
-                f"[bold]Message Types:[/bold] [cyan]All[/cyan]")
+        # No message type filtering information - all message types are included
 
         export_panel = Panel(
             "\n".join(export_details),
@@ -823,26 +765,7 @@ class ChatShiftCLI:
                                message.media.document.mime_type.endswith('ogg'):
                                 continue
 
-                        # Check message type filters
-                        # Skip text messages if not included
-                        if not include_text and not hasattr(message, 'media') and not message.action:
-                            continue
-
-                        # Skip media messages if not included
-                        if not include_media and hasattr(message, 'media') and message.media:
-                            continue
-
-                        # Skip service messages if not included
-                        if not include_service and message.action:
-                            continue
-
-                        # Skip forwarded messages if not included
-                        if not include_forwarded and message.forward:
-                            continue
-
-                        # Skip replies if not included
-                        if not include_replies and message.reply_to:
-                            continue
+                        # No message type filtering - all message types are included
 
                         # Include message if it passes all filters
                         messages.append(message)
@@ -857,6 +780,8 @@ class ChatShiftCLI:
                 status.update(
                     f"[bold green]Downloaded {message_count} messages![/bold green]")
                 time.sleep(0.5)
+
+                # No debug message type counts - removed with message type filtering
 
                 # Format messages
                 status.update("[bold cyan]Formatting messages...[/bold cyan]")
@@ -915,29 +840,7 @@ class ChatShiftCLI:
                 success_details.append(
                     f"[bold]Media Types:[/bold] [cyan]All[/cyan]")
 
-            # Add message type filtering information
-            message_types = []
-            if not (include_text and include_media and include_service and include_forwarded and include_replies):
-                if include_text:
-                    message_types.append("Text")
-                if include_media:
-                    message_types.append("Media")
-                if include_service:
-                    message_types.append("Service")
-                if include_forwarded:
-                    message_types.append("Forwarded")
-                if include_replies:
-                    message_types.append("Replies")
-
-                if message_types:
-                    success_details.append(
-                        f"[bold]Message Types:[/bold] [cyan]{', '.join(message_types)}[/cyan]")
-                else:
-                    success_details.append(
-                        f"[bold]Message Types:[/bold] [warning]None (empty export)[/warning]")
-            else:
-                success_details.append(
-                    f"[bold]Message Types:[/bold] [cyan]All[/cyan]")
+            # No message type filtering information - all message types are included
 
             # Add file naming information if custom naming was used
             if custom_name_info:
@@ -1183,13 +1086,72 @@ class ChatShiftCLI:
                 options['include_audio'],
                 options['include_stickers'],
                 options['include_voice'],
-                options['include_text'],
-                options['include_media'],
-                options['include_service'],
-                options['include_forwarded'],
-                options['include_replies'],
                 options['custom_name_info'] if options['use_custom_naming'] else None
             )
+
+            # Ask if user wants to download media from this chat
+            download_media_option = console.input(
+                "\n[bold]Do you want to download media from this chat?[/bold] (y/n): ")
+
+            if download_media_option.lower() == 'y':
+                # Ask for media download options
+                output_dir = console.input(
+                    "\n[bold]Enter output directory for media files:[/bold] (default: 'media'): ") or 'media'
+
+                # Ask for media type filtering
+                use_media_filter = console.input(
+                    "\n[bold]Filter media types?[/bold] (y/n, default: n): ").lower() == 'y'
+
+                # Default to including all media types
+                include_photos = True
+                include_videos = True
+                include_documents = True
+                include_stickers = True
+
+                if use_media_filter:
+                    # Create a panel for media options
+                    media_panel = Panel(
+                        "[bold]Media Type Filtering[/bold]\n\n"
+                        "Select which media types to download.",
+                        title="Media Options",
+                        border_style="cyan",
+                        box=ROUNDED
+                    )
+                    console.print(media_panel)
+
+                    # Ask for each media type
+                    include_photos = console.input(
+                        "\n[bold]Include photos?[/bold] (y/n, default: y): ").lower() != 'n'
+                    include_videos = console.input(
+                        "[bold]Include videos?[/bold] (y/n, default: y): ").lower() != 'n'
+                    include_documents = console.input(
+                        "[bold]Include documents?[/bold] (y/n, default: y): ").lower() != 'n'
+                    include_stickers = console.input(
+                        "[bold]Include stickers?[/bold] (y/n, default: y): ").lower() != 'n'
+
+                    # Show summary of selected options
+                    console.print("\n[bold]Media types to include:[/bold]")
+                    console.print(
+                        f"[dim]→ Photos:[/dim] [cyan]{'Yes' if include_photos else 'No'}[/cyan]")
+                    console.print(
+                        f"[dim]→ Videos:[/dim] [cyan]{'Yes' if include_videos else 'No'}[/cyan]")
+                    console.print(
+                        f"[dim]→ Documents:[/dim] [cyan]{'Yes' if include_documents else 'No'}[/cyan]")
+                    console.print(
+                        f"[dim]→ Stickers:[/dim] [cyan]{'Yes' if include_stickers else 'No'}[/cyan]")
+
+                # Use the same date range as the export if available
+                await self.download_media(
+                    selected_dialog,
+                    options['limit'],
+                    output_dir,
+                    options['start_date'],
+                    options['end_date'],
+                    include_photos,
+                    include_videos,
+                    include_documents,
+                    include_stickers
+                )
 
             # Ask if user wants to export another chat
             another = console.input(
@@ -1215,6 +1177,163 @@ class ChatShiftCLI:
             padding=(1, 2)
         )
         console.print(farewell_panel)
+
+    async def download_media(self, dialog, limit, output_dir, start_date=None, end_date=None,
+                             include_photos=True, include_videos=True, include_documents=True,
+                             include_stickers=True):
+        """Download media files from a chat"""
+        # Create an export panel with details
+        export_details = [
+            f"[bold]Downloading Media from:[/bold] [cyan]{dialog.name}[/cyan]",
+            f"[bold]Message Limit:[/bold] [cyan]{limit}[/cyan]",
+            f"[bold]Output Directory:[/bold] [cyan]{output_dir}[/cyan]"
+        ]
+
+        # Add date range information if provided
+        if start_date:
+            export_details.append(
+                f"[bold]Start Date:[/bold] [cyan]{start_date.strftime('%Y-%m-%d')}[/cyan]")
+        if end_date:
+            export_details.append(
+                f"[bold]End Date:[/bold] [cyan]{(end_date - datetime.timedelta(days=1)).strftime('%Y-%m-%d')}[/cyan]")
+
+        # Add media type information
+        media_types = []
+        if not (include_photos and include_videos and include_documents and include_stickers):
+            if include_photos:
+                media_types.append("Photos")
+            if include_videos:
+                media_types.append("Videos")
+            if include_documents:
+                media_types.append("Documents")
+            if include_stickers:
+                media_types.append("Stickers")
+
+            if media_types:
+                export_details.append(
+                    f"[bold]Media Types:[/bold] [cyan]{', '.join(media_types)}[/cyan]")
+            else:
+                export_details.append(
+                    f"[bold]Media Types:[/bold] [warning]None (empty download)[/warning]")
+        else:
+            export_details.append(
+                f"[bold]Media Types:[/bold] [cyan]All[/cyan]")
+
+        export_panel = Panel(
+            "\n".join(export_details),
+            title="Media Download Details",
+            border_style="cyan",
+            box=ROUNDED
+        )
+        console.print(export_panel)
+
+        # Create output directory if it doesn't exist
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Download media files
+        async with status_context("[bold cyan]Downloading media files...[/bold cyan]") as status:
+            # Get messages
+            message_count = 0
+            media_count = 0
+
+            async for message in self.client.iter_messages(dialog, limit=limit):
+                # Apply date filter if provided
+                if start_date and message.date.replace(tzinfo=None) < start_date:
+                    continue
+                if end_date and message.date.replace(tzinfo=None) >= end_date:
+                    continue
+
+                # Check if message has media
+                if message.media:
+                    # Skip media types that are not included
+                    if hasattr(message.media, 'photo') and message.media.photo and not include_photos:
+                        continue
+
+                    if hasattr(message.media, 'document') and message.media.document:
+                        # Check document type
+                        if hasattr(message.media.document, 'mime_type') and message.media.document.mime_type:
+                            mime_type = message.media.document.mime_type
+
+                            # Skip videos if not included
+                            if mime_type.startswith('video/') and not include_videos:
+                                continue
+
+                            # Skip documents if not included
+                            if not (mime_type.startswith('image/') or
+                                    mime_type.startswith('video/') or
+                                    mime_type.startswith('audio/')) and not include_documents:
+                                continue
+
+                        # Skip stickers if not included
+                        if hasattr(message, 'sticker') and message.sticker and not include_stickers:
+                            continue
+
+                    # Download the media
+                    try:
+                        filename = f"{message.id}"
+                        if hasattr(message.media, 'document') and message.media.document and hasattr(message.media.document, 'attributes'):
+                            for attr in message.media.document.attributes:
+                                if hasattr(attr, 'file_name') and attr.file_name:
+                                    filename = attr.file_name
+                                    break
+
+                        # Ensure filename is unique
+                        file_path = os.path.join(output_dir, filename)
+                        if os.path.exists(file_path):
+                            base, ext = os.path.splitext(filename)
+                            filename = f"{base}_{message.id}{ext}"
+                            file_path = os.path.join(output_dir, filename)
+
+                        # Download the file
+                        await message.download_media(file=file_path)
+                        media_count += 1
+
+                        # Update status
+                        status.update(
+                            f"[bold cyan]Downloaded {media_count} media files...[/bold cyan]")
+                    except Exception as e:
+                        console.print(
+                            f"[bold red]Error downloading media:[/bold red] {str(e)}")
+
+                # Update message count
+                message_count += 1
+                if message_count % 50 == 0:
+                    status.update(
+                        f"[bold cyan]Processed {message_count} messages, downloaded {media_count} media files...[/bold cyan]")
+
+            # Show completion message
+            status.update(
+                f"[bold green]Downloaded {media_count} media files from {message_count} messages![/bold green]")
+            time.sleep(0.5)
+
+        # Show success message with details
+        success_details = [
+            f"[bold green]✓ Media download completed successfully![/bold green]\n",
+            f"[bold]Messages Processed:[/bold] [cyan]{message_count}[/cyan]",
+            f"[bold]Media Files Downloaded:[/bold] [cyan]{media_count}[/cyan]",
+            f"[bold]Output Directory:[/bold] [cyan]{output_dir}[/cyan]"
+        ]
+
+        # Add date range information if provided
+        if start_date:
+            success_details.append(
+                f"[bold]Start Date:[/bold] [cyan]{start_date.strftime('%Y-%m-%d')}[/cyan]")
+        if end_date:
+            success_details.append(
+                f"[bold]End Date:[/bold] [cyan]{(end_date - datetime.timedelta(days=1)).strftime('%Y-%m-%d')}[/cyan]")
+
+        # Add media type information
+        if media_types:
+            success_details.append(
+                f"[bold]Media Types:[/bold] [cyan]{', '.join(media_types)}[/cyan]")
+
+        success_panel = Panel(
+            "\n".join(success_details),
+            title="Success",
+            border_style="green",
+            box=ROUNDED
+        )
+        console.print(success_panel)
 
 
 async def main():

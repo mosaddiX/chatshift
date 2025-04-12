@@ -11,13 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Date range filtering for message exports
 - Ability to filter messages by start and end dates
 - Media type filtering (photos, videos, documents, audio, stickers, voice)
-- Message type filtering (text, media, service, forwarded, replies)
 - Selective media inclusion/exclusion options
 - Custom file naming options with placeholders
 - Dynamic file name generation based on chat name and date
 - Enhanced export options interface
 - Improved export details display
 - Date validation with helpful error messages
+- Media download feature with filtering options (photos, videos, documents, stickers)
+- Option to download media after exporting chat
+
+### Removed
+- Message type filtering (text, media, service, forwarded, replies) due to implementation issues
 
 ## [0.4.0] - 2025-04-12
 

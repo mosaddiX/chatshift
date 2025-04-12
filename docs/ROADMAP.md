@@ -41,7 +41,8 @@ This document outlines the planned development path for ChatShift.
 - ✅ Custom file naming options with placeholders
 - ✅ Dynamic file name generation based on chat name and date
 - ❌ Format customization
-- ✅ Message type filtering
+- ❌ Message type filtering (removed due to implementation issues)
+- ✅ Media download feature
 - ❌ Advanced search functionality
 - ❌ Message content filtering
 - ❌ Multiple chat export
