@@ -201,7 +201,7 @@ class MainScreen(Screen):
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         """Handle row selection in the chats table"""
         try:
-            # Get the selected row index
+            # Get the selected row data
             table = self.query_one("#chats-table", DataTable)
             row_key = event.row_key
             row_data = table.get_row(row_key)
@@ -209,24 +209,23 @@ class MainScreen(Screen):
             # The first column contains the ID (1-based)
             row_id = int(row_data[0]) - 1
 
-            # Get the corresponding dialog
-            filter_text = self.filter_text.lower()
-            dialogs = [
-                d for d in self.app.dialogs
-                if not filter_text or filter_text in d.name.lower()
-            ]
+            # Get the dialog name from the table
+            dialog_name = row_data[1]
 
-            if 0 <= row_id < len(dialogs):
-                self.selected_dialog = dialogs[row_id]
+            # Find the matching dialog in the app's dialog list
+            for dialog in self.app.dialogs:
+                if dialog.name == dialog_name:
+                    self.selected_dialog = dialog
 
-                # Update the selected chat label
-                selected_chat = self.query_one("#selected-chat", Static)
-                selected_chat.update(
-                    f"Selected chat: [bold cyan]{self.selected_dialog.name}[/bold cyan]")
+                    # Update the selected chat label
+                    selected_chat = self.query_one("#selected-chat", Static)
+                    selected_chat.update(
+                        f"Selected chat: [bold cyan]{self.selected_dialog.name}[/bold cyan]")
 
-                # Enable the export button
-                export_button = self.query_one("#export-button", Button)
-                export_button.disabled = False
+                    # Enable the export button
+                    export_button = self.query_one("#export-button", Button)
+                    export_button.disabled = False
+                    break
         except Exception as e:
             self.app.push_screen(
                 ErrorScreen(f"Error selecting chat: {str(e)}"),
@@ -304,8 +303,13 @@ class RefreshingScreen(Screen):
             # Get dialogs
             self.app.dialogs = await self.app.exporter.get_dialogs()
 
-            # Show main screen
-            self.app.pop_screen()
+            # Remove this screen and return to main
+            if self.app.screen_stack and len(self.app.screen_stack) > 1:
+                # If we're in the refresh screen, pop it to go back to main
+                self.app.pop_screen()
+            else:
+                # If somehow we're not in the expected screen, explicitly push main
+                self.app.push_screen("main")
         except Exception as e:
             # Show error
             self.app.push_screen(
@@ -425,14 +429,20 @@ class ResultScreen(Screen):
             # Open the file with the default application
             if os.name == 'nt':  # Windows
                 os.startfile(output_file)
-            elif os.name == 'posix':  # macOS and Linux
-                # Use subprocess instead of os.system for better compatibility
+            else:  # macOS and Linux
+                # Import subprocess here to avoid issues
                 import subprocess
                 try:
-                    subprocess.run(['xdg-open', output_file],
-                                   check=True)  # Linux
-                except (subprocess.SubprocessError, FileNotFoundError):
-                    subprocess.run(['open', output_file], check=True)  # macOS
+                    # Try the Linux command first
+                    subprocess.run(['xdg-open', output_file], check=False)
+                except FileNotFoundError:
+                    try:
+                        # Try the macOS command
+                        subprocess.run(['open', output_file], check=False)
+                    except FileNotFoundError:
+                        # If all else fails, show an error
+                        raise Exception(
+                            "Could not find a program to open the file")
         except Exception as e:
             self.app.push_screen(
                 ErrorScreen(f"Failed to open file: {str(e)}"),
