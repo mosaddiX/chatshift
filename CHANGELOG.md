@@ -5,6 +5,22 @@ All notable changes to ChatShift will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2023-06-30
+
+### Added
+- Enhanced interactive terminal interface using Textual
+- Modern TUI with screens, widgets, and keyboard navigation
+- Chat filtering functionality
+- Progress indicators for message downloading
+- Improved error handling and user feedback
+- Command-line arguments for interface selection
+- Fallback to CLI if TUI dependencies are not available
+
+### Changed
+- Restructured application to support both CLI and TUI
+- Improved exporter to work with both interfaces
+- Better progress reporting during export
+
 ## [0.2.0] - 2023-06-15
 
 ### Added

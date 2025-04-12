@@ -6,7 +6,7 @@ This is the main entry point for the ChatShift application.
 Run this file to start the application.
 
 Author: mosaddiX
-Version: 0.1.0
+Version: 0.3.0
 """
 
 from chatshift.cli import run

@@ -47,11 +47,20 @@ Follow the interactive prompts to select and export your chats.
 ## Version History
 
 - **v0.1**: Basic setup and authentication
-- **v0.2**: Enhanced WhatsApp format implementation (current)
-- **v0.3**: Interactive terminal interface
+- **v0.2**: Enhanced WhatsApp format implementation
+- **v0.3**: Interactive terminal interface (current)
 - **v0.4**: Customization options
 - **v0.5**: Advanced features
 - **v1.0**: Final release
+
+## Features in v0.3
+
+- Modern Text-based User Interface (TUI) using Textual
+- Enhanced interactive experience with screens and widgets
+- Chat filtering functionality
+- Progress indicators for message downloading
+- Command-line arguments for interface selection
+- Improved error handling and user feedback
 
 ## Features in v0.2
 

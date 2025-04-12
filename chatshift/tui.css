@@ -1,0 +1,146 @@
+#welcome-container {
+    width: 100%;
+    height: 100%;
+    align: center middle;
+    background: $surface;
+}
+
+#welcome-container > Static {
+    width: 100%;
+    content-align: center middle;
+    padding: 1;
+}
+
+#title {
+    text-style: bold;
+    color: $accent;
+}
+
+#subtitle {
+    color: $text;
+    font-style: italic;
+}
+
+#author {
+    color: $success;
+    margin-top: 1;
+}
+
+#instruction {
+    margin-top: 2;
+}
+
+#auth-container, #refreshing-container, #exporting-container, #result-container, #error-container {
+    width: 100%;
+    height: 100%;
+    align: center middle;
+    background: $surface;
+}
+
+#auth-container > Static, #refreshing-container > Static, #exporting-container > Static {
+    width: 100%;
+    content-align: center middle;
+    padding: 1;
+}
+
+#auth-loader, #refreshing-loader, #exporting-loader {
+    width: 10;
+    height: 1;
+}
+
+#main-container {
+    width: 100%;
+    height: 100%;
+    background: $surface;
+}
+
+.panel {
+    height: 100%;
+    padding: 1;
+    border: solid $primary;
+}
+
+#left-panel {
+    width: 60%;
+}
+
+#right-panel {
+    width: 40%;
+}
+
+#chats-title, #export-title {
+    text-style: bold;
+    color: $accent;
+    margin-bottom: 1;
+}
+
+#filter-input {
+    margin-bottom: 1;
+}
+
+#chats-table {
+    height: 1fr;
+    border: solid $primary;
+}
+
+#export-options {
+    margin-top: 2;
+}
+
+#export-options > Static {
+    margin-bottom: 1;
+}
+
+#export-options > Input {
+    margin-bottom: 1;
+}
+
+#export-buttons {
+    margin-top: 2;
+}
+
+#export-buttons > Button {
+    margin-right: 1;
+}
+
+#result-container > Static {
+    width: 100%;
+    content-align: center middle;
+    padding: 1;
+}
+
+#result-title {
+    color: $success;
+    margin-bottom: 1;
+}
+
+#result-details {
+    margin-bottom: 2;
+}
+
+#result-buttons {
+    margin-top: 2;
+}
+
+#result-buttons > Button {
+    margin-right: 1;
+}
+
+#error-container > Static {
+    width: 100%;
+    content-align: center middle;
+    padding: 1;
+}
+
+#error-title {
+    color: $error;
+    margin-bottom: 1;
+}
+
+#error-message {
+    margin-bottom: 2;
+}
+
+#error-buttons {
+    margin-top: 2;
+}
