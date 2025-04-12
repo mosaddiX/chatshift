@@ -14,7 +14,7 @@ import sys
 import time
 import asyncio
 import logging
-from datetime import datetime
+import datetime
 from dotenv import load_dotenv
 from telethon import TelegramClient
 from telethon.tl.types import User, Chat, Channel, Dialog
@@ -435,6 +435,9 @@ class ChatShiftCLI:
                     # Parse and validate the date
                     start_date = datetime.datetime.strptime(
                         start_date_input, "%Y-%m-%d")
+                    # Make timezone-aware by setting to UTC
+                    start_date = start_date.replace(
+                        tzinfo=datetime.timezone.utc)
                     console.print(
                         f"[dim]→ Start date:[/dim] [cyan]{start_date.strftime('%Y-%m-%d')}[/cyan]")
                     break
@@ -458,6 +461,9 @@ class ChatShiftCLI:
 
                     # Add one day to end date to include the entire day
                     end_date = end_date + datetime.timedelta(days=1)
+
+                    # Make timezone-aware by setting to UTC
+                    end_date = end_date.replace(tzinfo=datetime.timezone.utc)
 
                     console.print(
                         f"[dim]→ End date:[/dim] [cyan]{end_date_input}[/cyan]")
@@ -712,7 +718,7 @@ class ChatShiftCLI:
 
     def format_chat_header(self, chat_title):
         """Format chat header in WhatsApp style"""
-        today = datetime.now()
+        today = datetime.datetime.now()
         date_str = self.format_date(today)
 
         return (
