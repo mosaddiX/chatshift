@@ -47,11 +47,16 @@ exports/
 
 # Media files
 media/
+
+# Exclude all images except welcome.png
 images/*
 !images/welcome.png
+
+# Exclude media files by extension
 *.jpg
 *.jpeg
 *.png
+!images/welcome.png
 *.gif
 *.mp4
 *.mp3
