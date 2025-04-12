@@ -101,8 +101,7 @@ class ChatShiftCLI:
         self.client = None
         self.dialogs = []
         self.spinner_chars = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷']
-        self.live_table = None
-        self.table_live = None
+        self.live = None  # Live display for updating the table in place
 
     def display_logo(self):
         """Display the ChatShift logo - elegant and minimal"""
@@ -214,6 +213,10 @@ class ChatShiftCLI:
         try:
             # If refreshing, use a more subtle status indicator
             if is_refresh:
+                # Pause the live display to show the status
+                if self.live:
+                    self.live.stop()
+
                 with console.status("[info]Updating chat list...[/info]", spinner="dots") as status:
                     # Get dialogs
                     self.dialogs = await self.client.get_dialogs()
@@ -221,32 +224,12 @@ class ChatShiftCLI:
                         f"[success]Updated! Found {len(self.dialogs)} chats[/success]")
                     time.sleep(0.3)
 
-                # Update the table in place
-                new_table = self.create_dialogs_table()
-                panel = Panel(
-                    new_table,
-                    title="[title]Chats[/title]",
-                    border_style="border",
-                    box=MINIMAL,
-                    padding=(0, 1)
-                )
-
-                # Clear previous output and show updated table
-                console.print("\n" * 2)  # Add some space
-                console.print(panel)
-
-                # Display help text again
-                help_text = Text()
-                help_text.append("\n")
-                help_text.append("Enter a ", style="muted")
-                help_text.append("number", style="accent")
-                help_text.append(" to select a chat, ", style="muted")
-                help_text.append("r", style="accent")
-                help_text.append(" to refresh, or ", style="muted")
-                help_text.append("q", style="accent")
-                help_text.append(" to quit", style="muted")
-
-                console.print(Align.center(help_text))
+                # Update the live display with new data
+                if self.live:
+                    # Update the content
+                    self.live.update(self.create_dialogs_display())
+                    # Restart the live display
+                    self.live.start()
             else:
                 # First time loading - show a more prominent status
                 # Create a panel for the dialog fetching process
@@ -324,24 +307,8 @@ class ChatShiftCLI:
 
         return table
 
-    def display_dialogs(self):
-        """Display all dialogs in a numbered list with live updating"""
-        # Create a panel to wrap the table
-        panel = Panel(
-            self.create_dialogs_table(),
-            title="[title]Chats[/title]",
-            border_style="border",
-            box=MINIMAL,
-            padding=(0, 1)
-        )
-
-        # Store the table for later updates
-        self.live_table = panel
-
-        # Display the panel
-        console.print(panel)
-
-        # Display help text
+    def create_help_text(self):
+        """Create help text for the dialog selection"""
         help_text = Text()
         help_text.append("\n")
         help_text.append("Enter a ", style="muted")
@@ -351,11 +318,42 @@ class ChatShiftCLI:
         help_text.append(" to refresh, or ", style="muted")
         help_text.append("q", style="accent")
         help_text.append(" to quit", style="muted")
+        return Align.center(help_text)
 
-        console.print(Align.center(help_text))
+    def create_dialogs_display(self):
+        """Create the complete dialogs display with table and help text"""
+        # Create a panel to wrap the table
+        panel = Panel(
+            self.create_dialogs_table(),
+            title="[title]Chats[/title]",
+            border_style="border",
+            box=MINIMAL,
+            padding=(0, 1)
+        )
+
+        # Create a group with the panel and help text
+        return Group(panel, self.create_help_text())
+
+    def display_dialogs(self):
+        """Display all dialogs in a numbered list with live updating"""
+        # Create the display
+        display = self.create_dialogs_display()
+
+        # Create a Live display for updating in place
+        self.live = Live(display, console=console,
+                         screen=True, refresh_per_second=4)
+
+        # Start the live display
+        self.live.start()
+
+        # We'll keep the live display running in the background for updates
 
     def select_dialog(self):
         """Let the user select a dialog"""
+        # Stop the live display before getting input
+        if self.live:
+            self.live.stop()
+
         while True:
             try:
                 # Styled input prompt with minimal design
@@ -384,9 +382,15 @@ class ChatShiftCLI:
                 else:
                     console.print(
                         f"[warning]Please enter a number between 1 and {len(self.dialogs)}.[/warning]")
+                    # Restart the live display if we're continuing
+                    if self.live:
+                        self.live.start()
             except ValueError:
                 console.print(
                     "[warning]Please enter a valid number.[/warning]")
+                # Restart the live display if we're continuing
+                if self.live:
+                    self.live.start()
 
     def get_export_options(self):
         """Get export options from the user"""
@@ -705,6 +709,10 @@ class ChatShiftCLI:
                 "\n[bold]Do you want to export another chat?[/bold] (y/n): ")
             if another.lower() != 'y':
                 break
+
+        # Stop the live display if it's running
+        if self.live:
+            self.live.stop()
 
         # Disconnect from Telegram
         if self.client:
