@@ -16,10 +16,14 @@ Before testing, make sure you have:
 2. Select a chat from the list
 3. When prompted for action, select option 4 "Export multiple chats"
 4. Select multiple chats by entering their numbers one at a time
-5. Enter 'd' when you're done selecting
-6. Configure your export options (format, date range, etc.)
-7. Verify that all selected chats are exported to the specified directory
-8. Check that each chat has its own file with the correct naming convention
+   - Notice how the prompt shows the count of selected chats (e.g., "Selected: 3 >")
+   - Each time you select a chat, you'll see a confirmation message
+   - The interface avoids duplicating the list after each selection
+5. Enter 'v' to view all your selected chats in a table format
+6. Enter 'd' when you're done selecting
+7. Configure your export options (format, date range, etc.)
+8. Verify that all selected chats are exported to the specified directory
+9. Check that each chat has its own file with the correct naming convention
 
 ## Testing Export Statistics
 
@@ -70,6 +74,30 @@ Before testing, make sure you have:
 5. For custom format, test different date formats and message templates
 6. Verify that each format produces the expected output
 7. Check that the "No Header" option correctly omits the header
+
+## Testing Exit and Goodbye Screens
+
+1. **Normal Exit**:
+   - Complete an export operation
+   - When asked if you want to continue, select 'n'
+   - Observe the elegant farewell screen with cyan styling and sparkle symbols
+
+2. **Keyboard Interrupt**:
+   - Start an export operation
+   - Press Ctrl+C to interrupt it
+   - Observe the yellow-styled interrupted screen
+   - When asked if you want to continue, select 'n'
+   - Observe the goodbye screen
+
+3. **Multiple Interrupts**:
+   - Start an export operation
+   - Press Ctrl+C to interrupt it
+   - When asked if you want to continue, press Ctrl+C again
+   - Observe the elegant exit screen
+
+4. **Error Handling**:
+   - Try to cause an error (e.g., by entering invalid input)
+   - Observe how errors are displayed in elegant red panels
 
 ## Reporting Issues
 

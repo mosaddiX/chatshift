@@ -6,6 +6,15 @@
 
 ChatShift is a powerful Python-based tool for exporting Telegram chats into various text formats. With its elegant and modern terminal interface, ChatShift makes it easy to export single or multiple chats, download media files, and generate detailed statistics about your conversations.
 
+## Overview
+
+ChatShift provides a seamless way to export your Telegram conversations with a focus on:
+
+- **Elegance**: Clean, modern terminal interface with stylish visuals
+- **Flexibility**: Multiple export formats and customization options
+- **Performance**: Optimized for speed with batch processing and parallel downloads
+- **Usability**: Intuitive workflow with helpful prompts and error handling
+
 ## Features
 
 - Export Telegram chats to multiple formats (WhatsApp, Telegram, Discord, Simple, Custom)
@@ -53,31 +62,9 @@ python chatshift.py
 
 Follow the interactive prompts to select and export your chats.
 
-For testing the application, see [TESTING.md](docs/TESTING.md).
+For detailed usage instructions, feature guides, and testing procedures, see [USAGE.md](docs/USAGE.md).
 
-### Multiple Chat Export
-
-To export multiple chats at once:
-1. Select option 4 "Export multiple chats" from the action menu
-2. Select the chats you want to export by entering their numbers
-3. Use 'v' to view all selected chats in a table format
-4. Enter 'd' when you're done selecting
-5. Configure your export options
-
-The multiple chat selection interface now shows a clean, streamlined view that avoids duplicating the list of selected chats after each selection. Instead, it shows:
-- A confirmation message when a chat is added
-- The current count of selected chats in the prompt
-- A reminder to use 'v' to view all selected chats periodically
-
-### Export Statistics
-
-After exporting a chat, you can generate statistics about the exported messages:
-- Message counts by type (text, media, service)
-- Media counts by type (photos, videos, documents, audio)
-- Top message senders
-- Date range and messages per day
-
-## Version History
+## Version
 
 - **v0.1**: Basic setup and authentication
 - **v0.2**: Enhanced WhatsApp format implementation
@@ -88,51 +75,17 @@ After exporting a chat, you can generate statistics about the exported messages:
 
 ChatShift has now reached version 1.0, a stable release with all core features implemented. See [RELEASE_NOTES.md](docs/RELEASE_NOTES.md) for details about this release and [ROADMAP.md](docs/ROADMAP.md) for the development history and future plans.
 
-## Features in v1.0 (Current)
+## Key Features
 
-- Multiple chat export in a single operation
-- Export statistics and summaries
-- Performance optimizations with batch processing
-- Parallel media downloads for faster processing
-- Multiple export formats (WhatsApp, Telegram, Discord, Simple, Custom)
-- Optional headers in exported files
-- Date range filtering for message exports
-- Ability to filter messages by start and end dates
-- Media type filtering (photos, videos, documents, audio, stickers, voice)
-- Selective media inclusion/exclusion options
-- Custom file naming options with placeholders
-- Dynamic file name generation based on chat name and date
-- Enhanced export options interface
-- Improved export details display
-- Date validation with helpful error messages
-- Media download feature with filtering options (photos, videos, documents, stickers)
-- Option to choose between exporting messages, downloading media, or both
-- Graceful handling of keyboard interrupts (Ctrl+C)
-- Improved error handling and recovery
+- **Multiple Chat Export**: Export several chats in a single operation
+- **Export Statistics**: Generate detailed statistics about exported messages
+- **Performance Optimizations**: Batch processing and parallel downloads
+- **Multiple Export Formats**: WhatsApp, Telegram, Discord, Simple, and Custom formats
+- **Media Downloads**: Download media files with filtering options
+- **Customization Options**: Date ranges, file naming, headers, and more
+- **Elegant Interface**: Clean, modern terminal interface with real-time updates
 
-## Features in v0.4
-
-- Simplified and reliable command-line interface
-- Improved chat selection and display
-- Real-time progress updates during message downloading
-- Enhanced message formatting for all message types
-- Better error handling and user feedback
-- Support for service messages (group actions, etc.)
-- In-place table refresh functionality
-
-## Features in v0.2
-
-- Improved WhatsApp format compatibility
-- Enhanced message type handling
-- Support for various media types:
-  - Photos and videos
-  - Documents with file names
-  - Links and web pages
-  - Locations
-  - Contacts
-  - Polls
-- Default message limit of 5000
-- Better error handling
+For a complete list of features and version history, see [RELEASE_NOTES.md](docs/RELEASE_NOTES.md) and [ROADMAP.md](docs/ROADMAP.md).
 
 ## Contributing
 
