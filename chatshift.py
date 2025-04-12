@@ -43,11 +43,16 @@ import pyfiglet
 # Initialize colorama
 colorama.init(autoreset=True)
 
-# Configure logging
+# Configure logging - disable Telethon logs to keep the interface clean
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.WARNING,  # Only show warnings and errors
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+
+# Specifically silence Telethon's network logs
+logging.getLogger('telethon').setLevel(logging.ERROR)  # Only show errors
+logging.getLogger('telethon.network').setLevel(logging.ERROR)
+
 logger = logging.getLogger(__name__)
 
 # Create a custom theme for Rich - premium and elegant
