@@ -31,19 +31,17 @@ This document outlines the planned development path for ChatShift.
 - ✅ Better error handling and user feedback
 - ✅ Support for service messages (group actions, etc.)
 - ✅ In-place table refresh functionality
-- ❌ Customization options (Moved to v0.5)
 - ❌ Date range filtering (Implemented in v0.5)
 - ❌ Format customization (Moved to v0.5)
-- ❌ Output file naming options (Moved to v0.5)
-- ❌ Message type filtering (Moved to v0.5)
 
 ## Version 0.5 (Current)
 - ✅ Date range filtering
 - ✅ Include/exclude media options
-- ✅ Output file naming options
-- ❌ Customization options
+- ✅ Output file naming options (Moved to v0.5)
+- ✅ Custom file naming options with placeholders
+- ✅ Dynamic file name generation based on chat name and date
 - ❌ Format customization
-- ❌ Message type filtering
+- ✅ Message type filtering
 - ❌ Advanced search functionality
 - ❌ Message content filtering
 - ❌ Multiple chat export
@@ -59,7 +57,6 @@ This document outlines the planned development path for ChatShift.
 ### User Experience Enhancements
 - Multiple export format options (WhatsApp, HTML, JSON, CSV)
 - Preview functionality before export
-- Improved file naming and management
 
 ### Performance Optimizations
 - Batch processing for large chats

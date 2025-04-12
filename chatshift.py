@@ -434,6 +434,17 @@ class ChatShiftCLI:
         include_stickers = True
         include_voice = True
 
+        # Ask if user wants to filter message types
+        use_message_filter = console.input(
+            "\n[bold]Filter message types?[/bold] (y/n, default: n): ").lower() == 'y'
+
+        # Default to including all message types
+        include_text = True
+        include_media = True
+        include_service = True
+        include_forwarded = True
+        include_replies = True
+
         # If user wants to filter media types, ask for each type
         if use_media_filter:
             # Create a panel for media options
@@ -474,6 +485,43 @@ class ChatShiftCLI:
                 f"[dim]→ Stickers:[/dim] [cyan]{'Yes' if include_stickers else 'No'}[/cyan]")
             console.print(
                 f"[dim]→ Voice messages:[/dim] [cyan]{'Yes' if include_voice else 'No'}[/cyan]")
+
+        # If user wants to filter message types, ask for each type
+        if use_message_filter:
+            # Create a panel for message type options
+            message_panel = Panel(
+                "[bold]Message Type Filtering[/bold]\n\n"
+                "Select which message types to include in the export.",
+                title="Message Options",
+                border_style="cyan",
+                box=ROUNDED
+            )
+            console.print(message_panel)
+
+            # Ask for each message type
+            include_text = console.input(
+                "\n[bold]Include text messages?[/bold] (y/n, default: y): ").lower() != 'n'
+            include_media = console.input(
+                "[bold]Include media messages?[/bold] (y/n, default: y): ").lower() != 'n'
+            include_service = console.input(
+                "[bold]Include service messages?[/bold] (y/n, default: y): ").lower() != 'n'
+            include_forwarded = console.input(
+                "[bold]Include forwarded messages?[/bold] (y/n, default: y): ").lower() != 'n'
+            include_replies = console.input(
+                "[bold]Include replies?[/bold] (y/n, default: y): ").lower() != 'n'
+
+            # Show summary of selected options
+            console.print("\n[bold]Message types to include:[/bold]")
+            console.print(
+                f"[dim]→ Text messages:[/dim] [cyan]{'Yes' if include_text else 'No'}[/cyan]")
+            console.print(
+                f"[dim]→ Media messages:[/dim] [cyan]{'Yes' if include_media else 'No'}[/cyan]")
+            console.print(
+                f"[dim]→ Service messages:[/dim] [cyan]{'Yes' if include_service else 'No'}[/cyan]")
+            console.print(
+                f"[dim]→ Forwarded messages:[/dim] [cyan]{'Yes' if include_forwarded else 'No'}[/cyan]")
+            console.print(
+                f"[dim]→ Replies:[/dim] [cyan]{'Yes' if include_replies else 'No'}[/cyan]")
 
         if use_date_filter:
             # Get start date with validation
@@ -619,6 +667,11 @@ class ChatShiftCLI:
             'include_audio': include_audio,
             'include_stickers': include_stickers,
             'include_voice': include_voice,
+            'include_text': include_text,
+            'include_media': include_media,
+            'include_service': include_service,
+            'include_forwarded': include_forwarded,
+            'include_replies': include_replies,
             'use_custom_naming': use_custom_naming,
             'file_pattern': file_pattern,
             'file_extension': file_extension,
@@ -628,6 +681,8 @@ class ChatShiftCLI:
     async def export_chat(self, dialog, limit, output_file, start_date=None, end_date=None,
                           include_photos=True, include_videos=True, include_documents=True,
                           include_audio=True, include_stickers=True, include_voice=True,
+                          include_text=True, include_media=True, include_service=True,
+                          include_forwarded=True, include_replies=True,
                           custom_name_info=None):
         """Export a chat to WhatsApp format"""
         # Create an export panel with details
@@ -670,6 +725,30 @@ class ChatShiftCLI:
         else:
             export_details.append(
                 f"[bold]Media Types:[/bold] [cyan]All[/cyan]")
+
+        # Add message type filtering information
+        message_types = []
+        if not (include_text and include_media and include_service and include_forwarded and include_replies):
+            if include_text:
+                message_types.append("Text")
+            if include_media:
+                message_types.append("Media")
+            if include_service:
+                message_types.append("Service")
+            if include_forwarded:
+                message_types.append("Forwarded")
+            if include_replies:
+                message_types.append("Replies")
+
+            if message_types:
+                export_details.append(
+                    f"[bold]Message Types:[/bold] [cyan]{', '.join(message_types)}[/cyan]")
+            else:
+                export_details.append(
+                    f"[bold]Message Types:[/bold] [warning]None (empty export)[/warning]")
+        else:
+            export_details.append(
+                f"[bold]Message Types:[/bold] [cyan]All[/cyan]")
 
         export_panel = Panel(
             "\n".join(export_details),
@@ -744,6 +823,27 @@ class ChatShiftCLI:
                                message.media.document.mime_type.endswith('ogg'):
                                 continue
 
+                        # Check message type filters
+                        # Skip text messages if not included
+                        if not include_text and not hasattr(message, 'media') and not message.action:
+                            continue
+
+                        # Skip media messages if not included
+                        if not include_media and hasattr(message, 'media') and message.media:
+                            continue
+
+                        # Skip service messages if not included
+                        if not include_service and message.action:
+                            continue
+
+                        # Skip forwarded messages if not included
+                        if not include_forwarded and message.forward:
+                            continue
+
+                        # Skip replies if not included
+                        if not include_replies and message.reply_to:
+                            continue
+
                         # Include message if it passes all filters
                         messages.append(message)
 
@@ -814,6 +914,30 @@ class ChatShiftCLI:
             else:
                 success_details.append(
                     f"[bold]Media Types:[/bold] [cyan]All[/cyan]")
+
+            # Add message type filtering information
+            message_types = []
+            if not (include_text and include_media and include_service and include_forwarded and include_replies):
+                if include_text:
+                    message_types.append("Text")
+                if include_media:
+                    message_types.append("Media")
+                if include_service:
+                    message_types.append("Service")
+                if include_forwarded:
+                    message_types.append("Forwarded")
+                if include_replies:
+                    message_types.append("Replies")
+
+                if message_types:
+                    success_details.append(
+                        f"[bold]Message Types:[/bold] [cyan]{', '.join(message_types)}[/cyan]")
+                else:
+                    success_details.append(
+                        f"[bold]Message Types:[/bold] [warning]None (empty export)[/warning]")
+            else:
+                success_details.append(
+                    f"[bold]Message Types:[/bold] [cyan]All[/cyan]")
 
             # Add file naming information if custom naming was used
             if custom_name_info:
@@ -1059,6 +1183,11 @@ class ChatShiftCLI:
                 options['include_audio'],
                 options['include_stickers'],
                 options['include_voice'],
+                options['include_text'],
+                options['include_media'],
+                options['include_service'],
+                options['include_forwarded'],
+                options['include_replies'],
                 options['custom_name_info'] if options['use_custom_naming'] else None
             )
 
