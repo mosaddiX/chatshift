@@ -43,5 +43,24 @@ telegram_chat_export.txt
 *.txt
 !requirements.txt
 
+# Media files
+media/
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.mp4
+*.mp3
+*.wav
+*.ogg
+*.webp
+*.pdf
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+
 # Logs
 *.log
