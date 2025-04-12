@@ -1190,6 +1190,14 @@ class ChatShiftCLI:
                         "\n[bold]Do you want to process another chat?[/bold] (y/n): ")
                     if another.lower() != 'y':
                         break
+                    else:
+                        # User wants to process another chat, refresh the dialog list
+                        if not await self.get_dialogs(is_refresh=True):
+                            console.print(
+                                "\n[danger]Failed to refresh chats. Exiting...[/danger]")
+                            break
+                        # Display dialogs again
+                        self.display_dialogs()
 
                 except KeyboardInterrupt:
                     # Handle Ctrl+C gracefully
@@ -1202,6 +1210,14 @@ class ChatShiftCLI:
                             "\n[bold]Do you want to continue using ChatShift?[/bold] (y/n): ")
                         if continue_program.lower() != 'y':
                             break
+                        else:
+                            # User wants to continue, refresh the dialog list
+                            if not await self.get_dialogs(is_refresh=True):
+                                console.print(
+                                    "\n[danger]Failed to refresh chats. Exiting...[/danger]")
+                                break
+                            # Display dialogs again
+                            self.display_dialogs()
                     except KeyboardInterrupt:
                         # If user presses Ctrl+C again, exit
                         console.print(

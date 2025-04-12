@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fixed async context manager issue with status updates
 - Improved error handling for async operations
+- Fixed chat list refresh when selecting to process another chat
+- Improved user experience when continuing after cancellation
 
 ### Removed
 - Message type filtering (text, media, service, forwarded, replies) due to implementation issues
