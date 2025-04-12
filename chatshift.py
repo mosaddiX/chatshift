@@ -102,6 +102,69 @@ USERNAME = os.getenv('TELEGRAM_USERNAME')
 DEFAULT_OUTPUT_FILE = os.getenv('OUTPUT_FILE', 'telegram_chat_export.txt')
 DEFAULT_MESSAGE_LIMIT = int(os.getenv('MESSAGE_LIMIT', '5000'))
 
+# Format templates
+FORMAT_TEMPLATES = {
+    'whatsapp': {
+        'name': 'WhatsApp',
+        'description': 'Standard WhatsApp format',
+        'date_format': '%d/%m/%y, %H:%M',
+        'message_format': '{date_str} - {sender_name}: {content}{edited_suffix}',
+        'header_format': '{date_str} - Messages and calls are end-to-end encrypted. No one outside of this chat, not even WhatsApp, can read or listen to them. Tap to learn more.',
+        'media_placeholder': '<Media omitted>',
+        'unknown_message_placeholder': '<Message>',
+        'error_placeholder': '<Message format error>',
+        'edited_suffix': ' (edited)'
+    },
+    'telegram': {
+        'name': 'Telegram',
+        'description': 'Telegram-style format',
+        'date_format': '%Y-%m-%d %H:%M:%S',
+        'message_format': '[{date_str}] {sender_name}: {content}{edited_suffix}',
+        'header_format': '--- Telegram Chat Export ---\nChat: {chat_title}\nExport date: {date_str}\n---',
+        'media_placeholder': '[Media]',
+        'unknown_message_placeholder': '[Message]',
+        'error_placeholder': '[Error: Message could not be formatted]',
+        'edited_suffix': ' (edited)'
+    },
+    'discord': {
+        'name': 'Discord',
+        'description': 'Discord-style format',
+        'date_format': '%Y-%m-%d %H:%M',
+        'message_format': '{sender_name} [{date_str}]: {content}{edited_suffix}',
+        'header_format': '# {chat_title} - Export Date: {date_str}',
+        'media_placeholder': '[attachment]',
+        'unknown_message_placeholder': '[message]',
+        'error_placeholder': '[error: could not format message]',
+        'edited_suffix': ' (edited)'
+    },
+    'simple': {
+        'name': 'Simple',
+        'description': 'Simple, clean format',
+        'date_format': '%Y-%m-%d %H:%M',
+        'message_format': '{sender_name} ({date_str}): {content}{edited_suffix}',
+        'header_format': '=== {chat_title} ===\nExported on {date_str}\n',
+        'media_placeholder': '[media]',
+        'unknown_message_placeholder': '[message]',
+        'error_placeholder': '[error]',
+        'edited_suffix': ' (edited)'
+    },
+    'custom': {
+        'name': 'Custom',
+        'description': 'User-defined custom format',
+        'date_format': '%d/%m/%y, %H:%M',  # Default, will be overridden by user input
+        # Default, will be overridden by user input
+        'message_format': '{date_str} - {sender_name}: {content}{edited_suffix}',
+        # Default, will be overridden by user input
+        'header_format': '--- {chat_title} ---\nExport date: {date_str}',
+        'media_placeholder': '<Media>',  # Default, will be overridden by user input
+        # Default, will be overridden by user input
+        'unknown_message_placeholder': '<Message>',
+        'error_placeholder': '<Error>',  # Default, will be overridden by user input
+        # Default, will be overridden by user input
+        'edited_suffix': ' (edited)'
+    }
+}
+
 
 @asynccontextmanager
 async def status_context(message):
@@ -627,6 +690,86 @@ class ChatShiftCLI:
         # Show confirmation of the output file
         console.print(f"[dim]→ Will save to[/dim] [cyan]{output_file}[/cyan]")
 
+        # Ask for format customization
+        format_panel = Panel(
+            "[bold]Format Customization[/bold]\n\n"
+            "Select the format for your exported messages.",
+            title="Format Options",
+            border_style="cyan",
+            box=ROUNDED
+        )
+        console.print(format_panel)
+
+        # Display available format templates
+        console.print("[bold]Available formats:[/bold]")
+        for i, (key, template) in enumerate(FORMAT_TEMPLATES.items(), 1):
+            console.print(
+                f"[dim]{i}.[/dim] [cyan]{template['name']}[/cyan] - {template['description']}")
+
+        # Ask user to select a format
+        format_choice = console.input(
+            "\n[bold]Select a format (1-{}):[/bold] ".format(len(FORMAT_TEMPLATES)))
+
+        # Default to WhatsApp format if invalid choice
+        try:
+            format_index = int(format_choice) - 1
+            if 0 <= format_index < len(FORMAT_TEMPLATES):
+                format_key = list(FORMAT_TEMPLATES.keys())[format_index]
+            else:
+                format_key = 'whatsapp'
+                console.print(
+                    "[warning]Invalid choice. Using WhatsApp format.[/warning]")
+        except ValueError:
+            format_key = 'whatsapp'
+            console.print(
+                "[warning]Invalid choice. Using WhatsApp format.[/warning]")
+
+        # Get the selected format template
+        format_template = FORMAT_TEMPLATES[format_key]
+        console.print(
+            f"[dim]→ Selected format:[/dim] [cyan]{format_template['name']}[/cyan]")
+
+        # If custom format is selected, allow customization
+        if format_key == 'custom':
+            console.print("\n[bold]Custom Format Options:[/bold]")
+
+            # Date format
+            date_format = console.input(
+                f"[bold]Date format:[/bold] (default: {format_template['date_format']}): ") or format_template['date_format']
+            format_template['date_format'] = date_format
+
+            # Message format
+            message_format = console.input(
+                f"[bold]Message format:[/bold] (default: {format_template['message_format']}): ") or format_template['message_format']
+            format_template['message_format'] = message_format
+
+            # Header format
+            header_format = console.input(
+                f"[bold]Header format:[/bold] (default: {format_template['header_format']}): ") or format_template['header_format']
+            format_template['header_format'] = header_format
+
+            # Media placeholder
+            media_placeholder = console.input(
+                f"[bold]Media placeholder:[/bold] (default: {format_template['media_placeholder']}): ") or format_template['media_placeholder']
+            format_template['media_placeholder'] = media_placeholder
+
+            # Unknown message placeholder
+            unknown_message_placeholder = console.input(
+                f"[bold]Unknown message placeholder:[/bold] (default: {format_template['unknown_message_placeholder']}): ") or format_template['unknown_message_placeholder']
+            format_template['unknown_message_placeholder'] = unknown_message_placeholder
+
+            # Error placeholder
+            error_placeholder = console.input(
+                f"[bold]Error placeholder:[/bold] (default: {format_template['error_placeholder']}): ") or format_template['error_placeholder']
+            format_template['error_placeholder'] = error_placeholder
+
+            # Edited suffix
+            edited_suffix = console.input(
+                f"[bold]Edited suffix:[/bold] (default: {format_template['edited_suffix']}): ") or format_template['edited_suffix']
+            format_template['edited_suffix'] = edited_suffix
+
+            console.print("[success]Custom format configured![/success]")
+
         return {
             'limit': limit,
             'output_file': output_file,
@@ -641,13 +784,14 @@ class ChatShiftCLI:
             'use_custom_naming': use_custom_naming,
             'file_pattern': file_pattern,
             'file_extension': file_extension,
-            'custom_name_info': custom_name_info
+            'custom_name_info': custom_name_info,
+            'format_template': format_template
         }
 
     async def export_chat(self, dialog, limit, output_file, start_date=None, end_date=None,
                           include_photos=True, include_videos=True, include_documents=True,
                           include_audio=True, include_stickers=True, include_voice=True,
-                          custom_name_info=None):
+                          format_template=None, custom_name_info=None):
         """Export a chat to WhatsApp format"""
         # Create an export panel with details
         export_details = [
@@ -783,9 +927,9 @@ class ChatShiftCLI:
 
                 # No debug message type counts - removed with message type filtering
 
-                # Format messages
+                # Format messages using the selected template
                 status.update("[bold cyan]Formatting messages...[/bold cyan]")
-                formatted_messages = await self.format_messages(messages, dialog.name)
+                formatted_messages = await self.format_messages(messages, dialog.name, format_template)
                 time.sleep(0.5)
 
                 # Write to file
@@ -903,19 +1047,23 @@ class ChatShiftCLI:
             console.print(
                 f"[bold red]Failed to open file:[/bold red] {str(e)}")
 
-    def format_date(self, date):
-        """Format date in WhatsApp style: DD/MM/YY, HH:MM"""
-        return date.strftime("%d/%m/%y, %H:%M")
+    def format_date(self, date, format_template):
+        """Format date according to the selected template"""
+        return date.strftime(format_template['date_format'])
 
-    async def format_message(self, message, chat_title=None):
-        """Format a single message in WhatsApp style"""
+    async def format_message(self, message, chat_title=None, format_template=None):
+        """Format a single message according to the selected template"""
+        # Use default WhatsApp format if no template is provided
+        if not format_template:
+            format_template = FORMAT_TEMPLATES['whatsapp']
+
         # Skip empty messages
         if not message:
             return None
 
         try:
             # Get message date
-            date_str = self.format_date(message.date)
+            date_str = self.format_date(message.date, format_template)
 
             # Get sender name
             if hasattr(message, 'sender') and message.sender:
@@ -931,12 +1079,12 @@ class ChatShiftCLI:
                 sender_name = "Unknown"
 
             # Check if message was edited
-            edited_suffix = " (edited)" if message.edit_date else ""
+            edited_suffix = format_template['edited_suffix'] if message.edit_date else ""
 
             # Get message content
             if hasattr(message, 'media') and message.media:
                 # Media message
-                content = "<Media omitted>"
+                content = format_template['media_placeholder']
             elif hasattr(message, 'text') and message.text:
                 # Text message
                 content = message.text
@@ -963,34 +1111,47 @@ class ChatShiftCLI:
                     content = f"performed action: {action_type}"
             else:
                 # Empty or unknown message type
-                content = "<Message>"
-        except Exception as e:
-            content = "<Message format error>"
+                content = format_template['unknown_message_placeholder']
+        except Exception:
+            content = format_template['error_placeholder']
             edited_suffix = ""
 
-        # Format in WhatsApp style
-        return f"{date_str} - {sender_name}: {content}{edited_suffix}"
-
-    def format_chat_header(self, chat_title):
-        """Format chat header in WhatsApp style"""
-        today = datetime.datetime.now()
-        date_str = self.format_date(today)
-
-        return (
-            f"{date_str} - Messages and calls are end-to-end encrypted. "
-            f"No one outside of this chat, not even WhatsApp, can read or listen to them. "
-            f"Tap to learn more."
+        # Format according to the selected template
+        return format_template['message_format'].format(
+            date_str=date_str,
+            sender_name=sender_name,
+            content=content,
+            edited_suffix=edited_suffix
         )
 
-    async def format_messages(self, messages, chat_title):
-        """Format a list of messages in WhatsApp style"""
-        # Start with just the encryption header (like WhatsApp)
-        formatted_messages = [self.format_chat_header(chat_title)]
+    def format_chat_header(self, chat_title, format_template=None):
+        """Format chat header according to the selected template"""
+        # Use default WhatsApp format if no template is provided
+        if not format_template:
+            format_template = FORMAT_TEMPLATES['whatsapp']
+
+        today = datetime.datetime.now()
+        date_str = self.format_date(today, format_template)
+
+        return format_template['header_format'].format(
+            date_str=date_str,
+            chat_title=chat_title
+        )
+
+    async def format_messages(self, messages, chat_title, format_template=None):
+        """Format a list of messages according to the selected template"""
+        # Use default WhatsApp format if no template is provided
+        if not format_template:
+            format_template = FORMAT_TEMPLATES['whatsapp']
+
+        # Start with the header
+        formatted_messages = [self.format_chat_header(
+            chat_title, format_template)]
 
         # Process messages in reverse order (oldest first, like WhatsApp)
         for message in reversed(messages):
             try:
-                formatted = await self.format_message(message, chat_title)
+                formatted = await self.format_message(message, chat_title, format_template)
                 if formatted:
                     formatted_messages.append(formatted)
             except Exception as e:
@@ -1116,6 +1277,7 @@ class ChatShiftCLI:
                             options['include_audio'],
                             options['include_stickers'],
                             options['include_voice'],
+                            options['format_template'],
                             options['custom_name_info'] if options['use_custom_naming'] else None
                         )
 

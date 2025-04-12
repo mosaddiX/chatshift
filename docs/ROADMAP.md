@@ -40,7 +40,9 @@ This document outlines the planned development path for ChatShift.
 - ✅ Output file naming options (Moved to v0.5)
 - ✅ Custom file naming options with placeholders
 - ✅ Dynamic file name generation based on chat name and date
-- ❌ Format customization
+- ✅ Format customization
+- ✅ Multiple format templates (WhatsApp, Telegram, Discord, Simple, Custom)
+- ✅ User-defined custom format with full control
 - ❌ Message type filtering (removed due to implementation issues)
 - ✅ Media download feature
 - ✅ Improved error handling and recovery
