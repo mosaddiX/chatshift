@@ -100,11 +100,11 @@ load_dotenv()
 API_ID = os.getenv('TELEGRAM_API_ID')
 API_HASH = os.getenv('TELEGRAM_API_HASH')
 PHONE = os.getenv('TELEGRAM_PHONE')
-USERNAME = os.getenv('TELEGRAM_USERNAME')
 
 # Default export settings
 DEFAULT_OUTPUT_FILE = os.getenv('OUTPUT_FILE', 'telegram_chat_export.txt')
-DEFAULT_MESSAGE_LIMIT = int(os.getenv('MESSAGE_LIMIT', '5000'))
+DEFAULT_MESSAGE_LIMIT = int(
+    os.getenv('MESSAGE_LIMIT', '0'))  # 0 for all messages
 
 # Format templates
 FORMAT_TEMPLATES = {
@@ -434,7 +434,7 @@ class ChatShiftCLI:
                         console.print("[muted]Exiting...[/muted]")
                         return None
                     elif choice.lower() == 'r':
-                        # Update the table in place instead of printing a new one
+                        # Clear the screen first to avoid duplicate display
                         console.print("[muted]Refreshing chats...[/muted]")
                         return 'refresh'
 
@@ -556,7 +556,7 @@ class ChatShiftCLI:
             try:
                 # Styled input for message limit
                 limit_input = console.input(
-                    f"[bold]Message limit[/bold] [dim](default: {DEFAULT_MESSAGE_LIMIT}, 0 for all):[/dim] ")
+                    f"[bold]Message limit[/bold] [dim](default: {DEFAULT_MESSAGE_LIMIT} = all messages):[/dim] ")
                 limit = int(
                     limit_input) if limit_input else DEFAULT_MESSAGE_LIMIT
 
@@ -1472,7 +1472,13 @@ class ChatShiftCLI:
                         # User wants to quit
                         break
                     elif selected_dialog == 'refresh':
-                        # User wants to refresh - update in place
+                        # User wants to refresh - clear screen first to avoid duplicate display
+                        os.system('cls' if os.name == 'nt' else 'clear')
+
+                        # Show the logo again
+                        self.display_logo()
+
+                        # Refresh the dialog list
                         if not await self.get_dialogs(is_refresh=True):
                             console.print(
                                 "\n[danger]Failed to refresh chats. Exiting...[/danger]")
@@ -1550,6 +1556,13 @@ class ChatShiftCLI:
                             options['custom_name_info'] if options['use_custom_naming'] else None
                         )
 
+                        # Ask if user wants to continue or exit
+                        continue_choice = console.input(
+                            "\n[bold]Export completed! Continue with ChatShift?[/bold] (y/n, default: n): ").lower()
+                        if continue_choice != 'y':
+                            # User wants to exit after export
+                            break
+
                         continue
 
                     # Get export options if needed
@@ -1605,6 +1618,14 @@ class ChatShiftCLI:
                             options['format_template'],
                             options['custom_name_info'] if options['use_custom_naming'] else None
                         )
+
+                        # If only exporting messages (not downloading media), ask if user wants to continue
+                        if action_choice == '1':
+                            continue_choice = console.input(
+                                "\n[bold]Export completed! Continue with ChatShift?[/bold] (y/n, default: n): ").lower()
+                            if continue_choice != 'y':
+                                # User wants to exit after export
+                                break
 
                     # Download media if requested
                     if action_choice in ['2', '3']:
@@ -1687,6 +1708,14 @@ class ChatShiftCLI:
                             include_stickers
                         )
 
+                        # If only downloading media (not exporting messages), ask if user wants to continue
+                        if action_choice == '2':
+                            continue_choice = console.input(
+                                "\n[bold]Media download completed! Continue with ChatShift?[/bold] (y/n, default: n): ").lower()
+                            if continue_choice != 'y':
+                                # User wants to exit after download
+                                break
+
                     # Ask if user wants to export another chat
                     another = console.input(
                         "\n[bold]Do you want to process another chat?[/bold] (y/n): ")
@@ -1694,36 +1723,106 @@ class ChatShiftCLI:
                         break
                     else:
                         # User wants to process another chat, refresh the dialog list
+                        # Clear the screen first to avoid duplicate display
+                        os.system('cls' if os.name == 'nt' else 'clear')
+
+                        # Show the logo again
+                        self.display_logo()
+
+                        # Refresh the dialog list
                         if not await self.get_dialogs(is_refresh=True):
                             console.print(
                                 "\n[danger]Failed to refresh chats. Exiting...[/danger]")
                             break
-                        # Display dialogs again
-                        self.display_dialogs()
+
+                        # No need to call display_dialogs() as get_dialogs() already displays the list when is_refresh=True
 
                 except KeyboardInterrupt:
-                    # Handle Ctrl+C gracefully
-                    console.print(
-                        "\n[warning]Operation cancelled by user.[/warning]")
+                    # Handle Ctrl+C gracefully with a clean panel
+                    # Clear the screen for a clean display
+                    os.system('cls' if os.name == 'nt' else 'clear')
+
+                    # Show the logo again
+                    self.display_logo()
+
+                    # Create a stylish interrupted message
+                    interrupt_text = Text()
+                    interrupt_text.append("\n⚠ ", style="yellow")
+                    interrupt_text.append(
+                        "Operation interrupted", style="bold yellow")
+                    interrupt_text.append(" ⚠\n\n", style="yellow")
+
+                    # Add a question
+                    interrupt_text.append(
+                        "Do you want to continue using ChatShift?", style="dim")
+
+                    # Create a visually appealing panel
+                    exit_panel = Panel(
+                        Align.center(interrupt_text),
+                        title="[yellow]Interrupted[/yellow]",
+                        border_style="yellow",
+                        box=ROUNDED,
+                        padding=(2, 4)
+                    )
+
+                    # Add some space and display the panel
+                    console.print("\n")
+                    console.print(Align.center(exit_panel))
+                    console.print("\n")
 
                     # Ask if user wants to continue with the program
                     try:
                         continue_program = console.input(
-                            "\n[bold]Do you want to continue using ChatShift?[/bold] (y/n): ")
+                            "\n[bold]Continue?[/bold] (y/n): ")
                         if continue_program.lower() != 'y':
                             break
                         else:
                             # User wants to continue, refresh the dialog list
+                            # Clear the screen first to avoid duplicate display
+                            os.system('cls' if os.name == 'nt' else 'clear')
+
+                            # Show the logo again
+                            self.display_logo()
+
+                            # Refresh the dialog list
                             if not await self.get_dialogs(is_refresh=True):
                                 console.print(
-                                    "\n[danger]Failed to refresh chats. Exiting...[/danger]")
+                                    "\n[danger]Failed to refresh chats.[/danger]")
                                 break
-                            # Display dialogs again
-                            self.display_dialogs()
+
+                            # No need to call display_dialogs() as get_dialogs() already displays the list when is_refresh=True
                     except KeyboardInterrupt:
-                        # If user presses Ctrl+C again, exit
-                        console.print(
-                            "\n[warning]Exiting ChatShift...[/warning]")
+                        # If user presses Ctrl+C again, exit with a clean panel
+                        # Clear the screen for a clean exit
+                        os.system('cls' if os.name == 'nt' else 'clear')
+
+                        # Create a stylish exit message
+                        exit_text = Text()
+                        exit_text.append("\n✨ ", style="yellow")
+                        exit_text.append(
+                            "Exiting ChatShift...", style="bold yellow")
+                        exit_text.append(" ✨\n\n", style="yellow")
+
+                        # Add a thank you message
+                        exit_text.append(
+                            "Thank you for using ChatShift!\n", style="dim")
+                        exit_text.append(
+                            "We hope to see you again soon!", style="italic dim")
+
+                        # Create a visually appealing panel
+                        exit_panel = Panel(
+                            Align.center(exit_text),
+                            title="[yellow]Goodbye[/yellow]",
+                            subtitle="[dim]v1.0.0[/dim]",
+                            border_style="yellow",
+                            box=ROUNDED,
+                            padding=(2, 4)
+                        )
+
+                        # Add some space and display the panel
+                        console.print("\n")
+                        console.print(Align.center(exit_panel))
+                        console.print("\n")
                         break
 
             # Disconnect from Telegram
@@ -1734,41 +1833,110 @@ class ChatShiftCLI:
                     status.update("[success]Disconnected![/success]")
                     time.sleep(0.5)
 
-            # Farewell message
+            # Farewell message - create a more elegant and visually appealing goodbye
+            # Clear the screen for a clean exit
+            os.system('cls' if os.name == 'nt' else 'clear')
+
+            # Create a stylish farewell message
+            farewell_text = Text()
+            farewell_text.append("\n✨ ", style="cyan")
+            farewell_text.append(
+                "Thank you for using ChatShift!", style="bold cyan")
+            farewell_text.append(" ✨\n\n", style="cyan")
+
+            # Add a message about successful exports
+            farewell_text.append(
+                "Your chats have been exported successfully.\n", style="dim")
+            farewell_text.append(
+                "We hope to see you again soon!", style="italic dim")
+
+            # Create a visually appealing panel
             farewell_panel = Panel(
-                "[success]Thank you for using ChatShift![/success]\n\n"
-                "[subtitle]Your chats have been exported successfully.[/subtitle]",
-                title="Goodbye",
-                border_style="border",
-                box=MINIMAL,
-                padding=(1, 2)
+                Align.center(farewell_text),
+                title="[cyan]Goodbye[/cyan]",
+                subtitle="[dim]v1.0.0[/dim]",
+                border_style="cyan",
+                box=ROUNDED,
+                padding=(2, 4)
             )
-            console.print(farewell_panel)
+
+            # Add some space and display the panel
+            console.print("\n")
+            console.print(Align.center(farewell_panel))
+            console.print("\n")
 
         except KeyboardInterrupt:
-            # Handle Ctrl+C at the top level
-            console.print(
-                "\n[warning]Operation cancelled by user. Exiting ChatShift...[/warning]")
+            # Handle Ctrl+C at the top level with a more elegant exit
+            # Clear the screen for a clean exit
+            os.system('cls' if os.name == 'nt' else 'clear')
+
+            # Create a stylish exit message
+            exit_text = Text()
+            exit_text.append("\n✨ ", style="yellow")
+            exit_text.append("Operation cancelled by user",
+                             style="bold yellow")
+            exit_text.append(" ✨\n\n", style="yellow")
+
+            # Add a thank you message
+            exit_text.append("Thank you for using ChatShift!\n", style="dim")
+            exit_text.append("We hope to see you again soon!",
+                             style="italic dim")
+
+            # Create a visually appealing panel
+            exit_panel = Panel(
+                Align.center(exit_text),
+                title="[yellow]Goodbye[/yellow]",
+                subtitle="[dim]v1.0.0[/dim]",
+                border_style="yellow",
+                box=ROUNDED,
+                padding=(2, 4)
+            )
+
+            # Add some space and display the panel
+            console.print("\n")
+            console.print(Align.center(exit_panel))
+            console.print("\n")
 
             # Disconnect from Telegram if connected
             if self.client:
                 try:
-                    async with status_context("[info]Disconnecting from Telegram...[/info]") as status:
-                        await self.client.disconnect()
-                        status.update("[success]Disconnected![/success]")
+                    await self.client.disconnect()
                 except Exception:
                     pass
 
         except Exception as e:
-            # Handle any other exceptions
-            console.print(f"\n[danger]An error occurred: {str(e)}[/danger]")
+            # Handle any other exceptions with a cleaner error message
+            # Clear the screen for a clean display
+            os.system('cls' if os.name == 'nt' else 'clear')
+
+            # Create a stylish error message
+            error_text = Text()
+            error_text.append("\n⛔ ", style="red")
+            error_text.append("Operation interrupted", style="bold red")
+            error_text.append(" ⛔\n\n", style="red")
+
+            # Add error details in a more elegant way
+            error_text.append("We encountered an issue:\n", style="dim")
+            error_text.append(f"{str(e)}", style="italic red dim")
+
+            # Create a visually appealing panel
+            error_panel = Panel(
+                Align.center(error_text),
+                title="[red]Error[/red]",
+                border_style="red",
+                box=ROUNDED,
+                padding=(2, 4)
+            )
+
+            # Add some space and display the panel
+            console.print("\n")
+            console.print(Align.center(error_panel))
+            console.print("\n")
 
             # Disconnect from Telegram if connected
             if self.client:
                 try:
-                    async with status_context("[info]Disconnecting from Telegram...[/info]") as status:
-                        await self.client.disconnect()
-                        status.update("[success]Disconnected![/success]")
+                    await self.client.disconnect()
                 except Exception:
                     pass
 

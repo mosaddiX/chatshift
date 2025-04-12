@@ -37,7 +37,6 @@ Create a file named `.env` in the root directory with the following content:
 TELEGRAM_API_ID=your_api_id
 TELEGRAM_API_HASH=your_api_hash
 TELEGRAM_PHONE=your_phone_number
-TELEGRAM_USERNAME=your_username
 OUTPUT_FILE=telegram_chat_export.txt
 MESSAGE_LIMIT=0  # 0 for all messages
 ```

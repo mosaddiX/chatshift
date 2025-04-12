@@ -32,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Export statistics and summaries
 - Performance optimizations with batch processing and parallel downloads
 - Redesigned welcome screen with a more compact and elegant appearance
+- Removed TELEGRAM_USERNAME requirement for simpler setup
+- Changed default message limit to 0 (all messages) for better user experience
+- Improved exit handling with elegant panels instead of plain text messages
+- Added graceful exit option after export/download completion
+- Fixed duplicate chat list display when refreshing or selecting another chat
+- Redesigned all exit/goodbye screens with stylish, colorful panels and Unicode symbols
 
 ### Fixed
 - Fixed async context manager issue with status updates
