@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Graceful handling of keyboard interrupts (Ctrl+C)
 - Improved error handling and recovery
 
+### Fixed
+- Fixed async context manager issue with status updates
+- Improved error handling for async operations
+
 ### Removed
 - Message type filtering (text, media, service, forwarded, replies) due to implementation issues
 

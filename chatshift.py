@@ -37,7 +37,7 @@ from rich.box import ROUNDED, DOUBLE, HEAVY, MINIMAL
 from rich.layout import Layout
 from rich.columns import Columns
 from rich.status import Status
-from contextlib import contextmanager
+from contextlib import asynccontextmanager
 
 # Additional styling
 import colorama
@@ -103,9 +103,9 @@ DEFAULT_OUTPUT_FILE = os.getenv('OUTPUT_FILE', 'telegram_chat_export.txt')
 DEFAULT_MESSAGE_LIMIT = int(os.getenv('MESSAGE_LIMIT', '5000'))
 
 
-@contextmanager
+@asynccontextmanager
 async def status_context(message):
-    """Context manager for status updates"""
+    """Async context manager for status updates"""
     status = Status(message, console=console)
     status.start()
     try:
@@ -705,7 +705,7 @@ class ChatShiftCLI:
 
         try:
             # Create a progress display
-            with console.status("[bold cyan]Preparing to download messages...[/bold cyan]", spinner="dots") as status:
+            async with status_context("[bold cyan]Preparing to download messages...[/bold cyan]") as status:
                 # Initialize counters
                 messages = []
                 message_count = 0
@@ -859,7 +859,7 @@ class ChatShiftCLI:
             open_file = console.input(
                 "\n[bold]Do you want to open the file?[/bold] (y/n): ")
             if open_file.lower() == 'y':
-                with console.status("[bold cyan]Opening file...[/bold cyan]", spinner="dots"):
+                async with status_context("[bold cyan]Opening file...[/bold cyan]") as status:
                     self.open_file(output_file)
                     time.sleep(0.5)
 
@@ -1210,7 +1210,7 @@ class ChatShiftCLI:
 
             # Disconnect from Telegram
             if self.client:
-                with console.status("[info]Disconnecting from Telegram...[/info]", spinner="dots") as status:
+                async with status_context("[info]Disconnecting from Telegram...[/info]") as status:
                     await self.client.disconnect()
                     time.sleep(0.5)
                     status.update("[success]Disconnected![/success]")
@@ -1235,7 +1235,7 @@ class ChatShiftCLI:
             # Disconnect from Telegram if connected
             if self.client:
                 try:
-                    with console.status("[info]Disconnecting from Telegram...[/info]", spinner="dots") as status:
+                    async with status_context("[info]Disconnecting from Telegram...[/info]") as status:
                         await self.client.disconnect()
                         status.update("[success]Disconnected![/success]")
                 except Exception:
@@ -1248,7 +1248,7 @@ class ChatShiftCLI:
             # Disconnect from Telegram if connected
             if self.client:
                 try:
-                    with console.status("[info]Disconnecting from Telegram...[/info]", spinner="dots") as status:
+                    async with status_context("[info]Disconnecting from Telegram...[/info]") as status:
                         await self.client.disconnect()
                         status.update("[success]Disconnected![/success]")
                 except Exception:
