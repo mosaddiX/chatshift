@@ -340,8 +340,7 @@ class ChatShiftCLI:
         display = self.create_dialogs_display()
 
         # Create a Live display for updating in place
-        self.live = Live(display, console=console,
-                         screen=True, refresh_per_second=4)
+        self.live = Live(display, console=console, refresh_per_second=4)
 
         # Start the live display
         self.live.start()
