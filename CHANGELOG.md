@@ -5,6 +5,22 @@ All notable changes to ChatShift will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-04-12
+
+### Added
+- Simplified and reliable command-line interface
+- Improved chat selection and display
+- Real-time progress updates during message downloading
+- Enhanced message formatting for all message types
+- Better error handling and user feedback
+- Support for service messages (group actions, etc.)
+
+### Changed
+- Removed TUI approach in favor of a simpler, more reliable CLI
+- Integrated all functionality into a single file for better maintainability
+- Improved message retrieval to include all message types
+- Enhanced file opening functionality across different operating systems
+
 ## [0.3.0] - 2023-06-30
 
 ### Added

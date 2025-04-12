@@ -1,14 +1,14 @@
 # ChatShift
 
-ChatShift is a Python-based tool to export Telegram chats into WhatsApp-like text format with an interactive terminal interface.
+ChatShift is a Python-based tool to export Telegram chats into WhatsApp-like text format with an elegant and simple interactive terminal interface.
 
 ## Features
 
 - Export Telegram chats to WhatsApp-like format
-- Interactive and elegant terminal interface
+- Clean and intuitive command-line interface
 - Customizable export options
-- Filter messages by date, type, and content
 - Support for various message types (text, media, links, etc.)
+- Real-time progress updates during export
 
 ## Installation
 
@@ -48,19 +48,19 @@ Follow the interactive prompts to select and export your chats.
 
 - **v0.1**: Basic setup and authentication
 - **v0.2**: Enhanced WhatsApp format implementation
-- **v0.3**: Interactive terminal interface (current)
-- **v0.4**: Customization options
-- **v0.5**: Advanced features
-- **v1.0**: Final release
+- **v0.3**: Interactive terminal interface
+- **v0.4**: Simplified CLI approach (current)
+- **v0.5**: Advanced features (planned)
+- **v1.0**: Final release (planned)
 
-## Features in v0.3
+## Features in v0.4
 
-- Modern Text-based User Interface (TUI) using Textual
-- Enhanced interactive experience with screens and widgets
-- Chat filtering functionality
-- Progress indicators for message downloading
-- Command-line arguments for interface selection
-- Improved error handling and user feedback
+- Simplified and reliable command-line interface
+- Improved chat selection and display
+- Real-time progress updates during message downloading
+- Enhanced message formatting for all message types
+- Better error handling and user feedback
+- Support for service messages (group actions, etc.)
 
 ## Features in v0.2
 
