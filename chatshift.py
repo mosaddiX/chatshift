@@ -101,7 +101,6 @@ class ChatShiftCLI:
         self.client = None
         self.dialogs = []
         self.spinner_chars = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷']
-        self.live = None  # Live display for updating the table in place
 
     def display_logo(self):
         """Display the ChatShift logo - elegant and minimal"""
@@ -213,10 +212,13 @@ class ChatShiftCLI:
         try:
             # If refreshing, use a more subtle status indicator
             if is_refresh:
-                # Pause the live display to show the status
-                if self.live:
-                    self.live.stop()
+                # Clear the console output
+                console.clear()
 
+                # Show the logo again for consistency
+                self.display_logo()
+
+                # Show a status message
                 with console.status("[info]Updating chat list...[/info]", spinner="dots") as status:
                     # Get dialogs
                     self.dialogs = await self.client.get_dialogs()
@@ -224,12 +226,8 @@ class ChatShiftCLI:
                         f"[success]Updated! Found {len(self.dialogs)} chats[/success]")
                     time.sleep(0.3)
 
-                # Update the live display with new data
-                if self.live:
-                    # Update the content
-                    self.live.update(self.create_dialogs_display())
-                    # Restart the live display
-                    self.live.start()
+                # Display the updated dialogs table
+                console.print(self.create_dialogs_display())
             else:
                 # First time loading - show a more prominent status
                 # Create a panel for the dialog fetching process
@@ -335,24 +333,13 @@ class ChatShiftCLI:
         return Group(panel, self.create_help_text())
 
     def display_dialogs(self):
-        """Display all dialogs in a numbered list with live updating"""
-        # Create the display
+        """Display all dialogs in a numbered list"""
+        # Create and display the dialogs
         display = self.create_dialogs_display()
-
-        # Create a Live display for updating in place
-        self.live = Live(display, console=console, refresh_per_second=4)
-
-        # Start the live display
-        self.live.start()
-
-        # We'll keep the live display running in the background for updates
+        console.print(display)
 
     def select_dialog(self):
         """Let the user select a dialog"""
-        # Stop the live display before getting input
-        if self.live:
-            self.live.stop()
-
         while True:
             try:
                 # Styled input prompt with minimal design
@@ -381,15 +368,9 @@ class ChatShiftCLI:
                 else:
                     console.print(
                         f"[warning]Please enter a number between 1 and {len(self.dialogs)}.[/warning]")
-                    # Restart the live display if we're continuing
-                    if self.live:
-                        self.live.start()
             except ValueError:
                 console.print(
                     "[warning]Please enter a valid number.[/warning]")
-                # Restart the live display if we're continuing
-                if self.live:
-                    self.live.start()
 
     def get_export_options(self):
         """Get export options from the user"""
@@ -708,10 +689,6 @@ class ChatShiftCLI:
                 "\n[bold]Do you want to export another chat?[/bold] (y/n): ")
             if another.lower() != 'y':
                 break
-
-        # Stop the live display if it's running
-        if self.live:
-            self.live.stop()
 
         # Disconnect from Telegram
         if self.client:
