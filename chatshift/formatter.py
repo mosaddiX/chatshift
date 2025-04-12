@@ -26,7 +26,7 @@ class WhatsAppFormatter:
     def format_message(self, message, chat_title=None):
         """Format a single message in WhatsApp style"""
         # Skip empty messages
-        if not message or (not message.text and not message.media):
+        if not message:
             return None
 
         # Get message date
@@ -97,10 +97,32 @@ class WhatsAppFormatter:
             elif hasattr(message, 'text') and message.text:
                 content = message.text
 
+            # Service messages (e.g., someone joined the group)
+            elif hasattr(message, 'action') and message.action:
+                action_type = type(message.action).__name__
+                if 'ChatCreate' in action_type:
+                    content = "created this group"
+                elif 'ChatAddUser' in action_type:
+                    content = "added a participant to the group"
+                elif 'ChatDeleteUser' in action_type:
+                    content = "removed a participant from the group"
+                elif 'ChatJoinedByLink' in action_type:
+                    content = "joined the group by link"
+                elif 'ChatEditTitle' in action_type:
+                    content = f"changed the group name to {getattr(message.action, 'title', 'unknown')}"
+                elif 'ChatEditPhoto' in action_type:
+                    content = "changed the group photo"
+                elif 'ChatDeletePhoto' in action_type:
+                    content = "removed the group photo"
+                elif 'MessagePin' in action_type:
+                    content = "pinned a message"
+                else:
+                    content = f"performed action: {action_type}"
+
             # Empty or unknown message type
             else:
-                content = ""
-                return None  # Skip empty messages
+                content = "<Message>"
+                # Don't skip unknown messages
 
         except Exception:
             content = "<Message format error>"

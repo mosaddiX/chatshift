@@ -156,8 +156,8 @@ class ChatExporter:
 
                     # Get messages
                     async for message in self.client.iter_messages(entity, limit=actual_limit):
-                        # Skip system messages and empty messages
-                        if message and (message.text or message.media):
+                        # Include all non-empty messages
+                        if message:
                             messages.append(message)
                         progress.update(task, advance=1, total=actual_limit)
 
@@ -186,8 +186,8 @@ class ChatExporter:
                 message_count = 0
 
                 async for message in self.client.iter_messages(entity, limit=actual_limit):
-                    # Skip system messages and empty messages
-                    if message and (message.text or message.media):
+                    # Include all non-empty messages
+                    if message:
                         messages.append(message)
 
                     # Update progress
