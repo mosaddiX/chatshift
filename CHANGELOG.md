@@ -5,6 +5,15 @@ All notable changes to ChatShift will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2025-04-13
+
+### Added
+- Date range filtering for message exports
+- Ability to filter messages by start and end dates
+- Enhanced export options interface
+- Improved export details display
+- Date validation with helpful error messages
+
 ## [0.4.0] - 2025-04-12
 
 ### Added
@@ -14,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced message formatting for all message types
 - Better error handling and user feedback
 - Support for service messages (group actions, etc.)
+- In-place table refresh functionality
 
 ### Changed
 - Removed TUI approach in favor of a simpler, more reliable CLI

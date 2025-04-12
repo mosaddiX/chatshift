@@ -6,7 +6,7 @@ This is the main entry point for the ChatShift application.
 Run this file to start the application.
 
 Author: mosaddiX
-Version: 0.4.0
+Version: 0.5.0
 """
 
 import os
@@ -140,7 +140,7 @@ class ChatShiftCLI:
         # Create the info panel
         info_panel = Panel(
             Group(
-                Align.center(Text("v0.4.0", style="subtitle")),
+                Align.center(Text("v0.5.0", style="subtitle")),
                 Align.center(
                     Text("Telegram to WhatsApp Chat Exporter", style="muted")),
                 Align.center(Text("Developed by mosaddiX", style="muted"))
@@ -414,6 +414,66 @@ class ChatShiftCLI:
                 console.print(
                     "[bold yellow]Please enter a valid number.[/bold yellow]")
 
+        # Ask if user wants to filter by date range
+        use_date_filter = console.input(
+            "\n[bold]Filter by date range?[/bold] (y/n, default: n): ").lower() == 'y'
+
+        start_date = None
+        end_date = None
+
+        if use_date_filter:
+            # Get start date with validation
+            while True:
+                try:
+                    start_date_input = console.input(
+                        "[bold]Start date[/bold] [dim](YYYY-MM-DD, leave empty for no start date):[/dim] ")
+
+                    if not start_date_input:
+                        console.print("[dim]→ No start date filter[/dim]")
+                        break
+
+                    # Parse and validate the date
+                    start_date = datetime.datetime.strptime(
+                        start_date_input, "%Y-%m-%d")
+                    console.print(
+                        f"[dim]→ Start date:[/dim] [cyan]{start_date.strftime('%Y-%m-%d')}[/cyan]")
+                    break
+                except ValueError:
+                    console.print(
+                        "[bold yellow]Please enter a valid date in YYYY-MM-DD format.[/bold yellow]")
+
+            # Get end date with validation
+            while True:
+                try:
+                    end_date_input = console.input(
+                        "[bold]End date[/bold] [dim](YYYY-MM-DD, leave empty for no end date):[/dim] ")
+
+                    if not end_date_input:
+                        console.print("[dim]→ No end date filter[/dim]")
+                        break
+
+                    # Parse and validate the date
+                    end_date = datetime.datetime.strptime(
+                        end_date_input, "%Y-%m-%d")
+
+                    # Add one day to end date to include the entire day
+                    end_date = end_date + datetime.timedelta(days=1)
+
+                    console.print(
+                        f"[dim]→ End date:[/dim] [cyan]{end_date_input}[/cyan]")
+
+                    # Validate date range if both dates are provided
+                    if start_date and end_date and start_date > end_date:
+                        console.print(
+                            "[bold yellow]End date must be after start date.[/bold yellow]")
+                        end_date = None
+                        continue
+
+                    break
+                except ValueError:
+                    console.print(
+                        "[bold yellow]Please enter a valid date in YYYY-MM-DD format.[/bold yellow]")
+
         # Get output file with styled input
         output_file = console.input(
             f"\n[bold]Output file[/bold] [dim](default: {DEFAULT_OUTPUT_FILE}):[/dim] ")
@@ -426,16 +486,30 @@ class ChatShiftCLI:
 
         return {
             'limit': limit,
-            'output_file': output_file
+            'output_file': output_file,
+            'start_date': start_date,
+            'end_date': end_date
         }
 
-    async def export_chat(self, dialog, limit, output_file):
+    async def export_chat(self, dialog, limit, output_file, start_date=None, end_date=None):
         """Export a chat to WhatsApp format"""
         # Create an export panel with details
+        export_details = [
+            f"[bold]Exporting Chat:[/bold] [cyan]{dialog.name}[/cyan]",
+            f"[bold]Message Limit:[/bold] [cyan]{limit if limit > 0 else 'All'}[/cyan]",
+            f"[bold]Output File:[/bold] [cyan]{output_file}[/cyan]"
+        ]
+
+        # Add date range information if provided
+        if start_date:
+            export_details.append(
+                f"[bold]Start Date:[/bold] [cyan]{start_date.strftime('%Y-%m-%d')}[/cyan]")
+        if end_date:
+            export_details.append(
+                f"[bold]End Date:[/bold] [cyan]{(end_date - datetime.timedelta(days=1)).strftime('%Y-%m-%d')}[/cyan]")
+
         export_panel = Panel(
-            f"[bold]Exporting Chat:[/bold] [cyan]{dialog.name}[/cyan]\n"
-            f"[bold]Message Limit:[/bold] [cyan]{limit if limit > 0 else 'All'}[/cyan]\n"
-            f"[bold]Output File:[/bold] [cyan]{output_file}[/cyan]",
+            "\n".join(export_details),
             title="Export Details",
             border_style="cyan",
             box=ROUNDED
@@ -457,8 +531,17 @@ class ChatShiftCLI:
 
                 # Download messages with progress updates
                 async for message in self.client.iter_messages(dialog.entity, limit=actual_limit):
-                    # Include all non-empty messages
-                    if message:
+                    # Skip messages outside the date range if filters are set
+                    if message and message.date:
+                        # Check start date filter
+                        if start_date and message.date < start_date:
+                            continue
+
+                        # Check end date filter
+                        if end_date and message.date > end_date:
+                            continue
+
+                        # Include message if it passes all filters
                         messages.append(message)
 
                     # Update progress
@@ -489,10 +572,22 @@ class ChatShiftCLI:
                 time.sleep(0.5)
 
             # Show success message with details
+            success_details = [
+                f"[bold green]✓ Export completed successfully![/bold green]\n",
+                f"[bold]Messages Exported:[/bold] [cyan]{len(messages)}[/cyan]",
+                f"[bold]Output File:[/bold] [cyan]{output_file}[/cyan]"
+            ]
+
+            # Add date range information if provided
+            if start_date:
+                success_details.append(
+                    f"[bold]Start Date:[/bold] [cyan]{start_date.strftime('%Y-%m-%d')}[/cyan]")
+            if end_date:
+                success_details.append(
+                    f"[bold]End Date:[/bold] [cyan]{(end_date - datetime.timedelta(days=1)).strftime('%Y-%m-%d')}[/cyan]")
+
             success_panel = Panel(
-                f"[bold green]✓ Export completed successfully![/bold green]\n\n"
-                f"[bold]Messages Exported:[/bold] [cyan]{len(messages)}[/cyan]\n"
-                f"[bold]Output File:[/bold] [cyan]{output_file}[/cyan]",
+                "\n".join(success_details),
                 title="Success",
                 border_style="green",
                 box=ROUNDED
@@ -687,7 +782,13 @@ class ChatShiftCLI:
             options = self.get_export_options()
 
             # Export chat
-            await self.export_chat(selected_dialog, options['limit'], options['output_file'])
+            await self.export_chat(
+                selected_dialog,
+                options['limit'],
+                options['output_file'],
+                options['start_date'],
+                options['end_date']
+            )
 
             # Ask if user wants to export another chat
             another = console.input(

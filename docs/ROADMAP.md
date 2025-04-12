@@ -23,7 +23,7 @@ This document outlines the planned development path for ChatShift.
 - ✅ Color-coded messages
 - ✅ User-friendly navigation
 
-## Version 0.4 (Current)
+## Version 0.4 (Completed)
 - ✅ Elegant, minimal CLI design
 - ✅ Improved chat selection and display
 - ✅ Real-time progress updates during message downloading
@@ -32,24 +32,24 @@ This document outlines the planned development path for ChatShift.
 - ✅ Support for service messages (group actions, etc.)
 - ✅ In-place table refresh functionality
 - ❌ Customization options (Moved to v0.5)
-- ❌ Date range filtering (Moved to v0.5)
+- ❌ Date range filtering (Implemented in v0.5)
 - ❌ Include/exclude media options (Moved to v0.5)
 - ❌ Format customization (Moved to v0.5)
 - ❌ Output file naming options (Moved to v0.5)
 - ❌ Message type filtering (Moved to v0.5)
 
-## Version 0.5 (Planned)
-- Customization options
-- Date range filtering
-- Include/exclude media options
-- Format customization
-- Output file naming options
-- Message type filtering
-- Advanced search functionality
-- Message content filtering
-- Multiple chat export
-- Export statistics and summaries
-- Performance optimizations
+## Version 0.5 (Current)
+- ✅ Date range filtering
+- ❌ Customization options
+- ❌ Include/exclude media options
+- ❌ Format customization
+- ❌ Output file naming options
+- ❌ Message type filtering
+- ❌ Advanced search functionality
+- ❌ Message content filtering
+- ❌ Multiple chat export
+- ❌ Export statistics and summaries
+- ❌ Performance optimizations
 
 ## Version 1.0 (Planned)
 ### Error Handling and Stability

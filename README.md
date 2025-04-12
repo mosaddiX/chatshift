@@ -49,9 +49,17 @@ Follow the interactive prompts to select and export your chats.
 - **v0.1**: Basic setup and authentication
 - **v0.2**: Enhanced WhatsApp format implementation
 - **v0.3**: Interactive terminal interface
-- **v0.4**: Simplified CLI approach (current)
-- **v0.5**: Advanced features (planned)
+- **v0.4**: Simplified CLI approach
+- **v0.5**: Date range filtering (current)
 - **v1.0**: Final release (planned)
+
+## Features in v0.5 (Current)
+
+- Date range filtering for message exports
+- Ability to filter messages by start and end dates
+- Enhanced export options interface
+- Improved export details display
+- Date validation with helpful error messages
 
 ## Features in v0.4
 
@@ -61,6 +69,7 @@ Follow the interactive prompts to select and export your chats.
 - Enhanced message formatting for all message types
 - Better error handling and user feedback
 - Support for service messages (group actions, etc.)
+- In-place table refresh functionality
 
 ## Features in v0.2
 
