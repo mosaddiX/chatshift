@@ -1000,183 +1000,259 @@ class ChatShiftCLI:
 
     async def run(self):
         """Run the CLI"""
-        # Clear the screen for a clean start
-        os.system('cls' if os.name == 'nt' else 'clear')
+        try:
+            # Clear the screen for a clean start
+            os.system('cls' if os.name == 'nt' else 'clear')
 
-        # Display the logo
-        self.display_logo()
+            # Display the logo
+            self.display_logo()
 
-        # Authenticate with Telegram
-        if not await self.authenticate():
-            console.print(
-                "\n[danger]Authentication failed. Exiting...[/danger]")
-            return
-
-        # Main loop
-        is_first_run = True
-        while True:
-            # Get dialogs - pass is_refresh flag to update in place when refreshing
-            if is_first_run:
-                if not await self.get_dialogs(is_refresh=False):
-                    console.print(
-                        "\n[danger]Failed to fetch chats. Exiting...[/danger]")
-                    break
-                # Display dialogs on first run only
-                self.display_dialogs()
-                is_first_run = False
-
-            # Select dialog
-            selected_dialog = self.select_dialog()
-
-            if selected_dialog is None:
-                # User wants to quit
-                break
-            elif selected_dialog == 'refresh':
-                # User wants to refresh - update in place
-                if not await self.get_dialogs(is_refresh=True):
-                    console.print(
-                        "\n[danger]Failed to refresh chats. Exiting...[/danger]")
-                    break
-                continue
-
-            # Get export options
-            options = self.get_export_options()
-
-            # Handle custom file naming if enabled
-            output_file = options['output_file']
-            if options['use_custom_naming'] and options['file_pattern']:
-                # Replace {chat_name} with the actual chat name
-                chat_name = selected_dialog.name
-                # Sanitize chat name for file system
-                chat_name = ''.join(
-                    c for c in chat_name if c.isalnum() or c in ' _-').strip()
-                # Replace spaces with underscores
-                chat_name = chat_name.replace(' ', '_')
-
-                # Apply the pattern
-                output_file = options['file_pattern'].replace(
-                    "{chat_name}", chat_name)
-
-                # Replace date and time placeholders
-                current_date = datetime.datetime.now().strftime("%Y-%m-%d")
-                current_time = datetime.datetime.now().strftime("%H%M")
-                output_file = output_file.replace(
-                    "{date}", current_date).replace("{time}", current_time)
-
-                # Add file extension
-                output_file += options['file_extension']
-
-                # Update the output file in options
-                options['output_file'] = output_file
-
-                # Show the final file name
+            # Authenticate with Telegram
+            if not await self.authenticate():
                 console.print(
-                    f"[dim]→ Final file name:[/dim] [cyan]{output_file}[/cyan]")
+                    "\n[danger]Authentication failed. Exiting...[/danger]")
+                return
 
-            # Export chat
-            await self.export_chat(
-                selected_dialog,
-                options['limit'],
-                options['output_file'],
-                options['start_date'],
-                options['end_date'],
-                options['include_photos'],
-                options['include_videos'],
-                options['include_documents'],
-                options['include_audio'],
-                options['include_stickers'],
-                options['include_voice'],
-                options['custom_name_info'] if options['use_custom_naming'] else None
-            )
+            # Main loop
+            is_first_run = True
+            while True:
+                try:
+                    # Get dialogs - pass is_refresh flag to update in place when refreshing
+                    if is_first_run:
+                        if not await self.get_dialogs(is_refresh=False):
+                            console.print(
+                                "\n[danger]Failed to fetch chats. Exiting...[/danger]")
+                            break
+                        # Display dialogs on first run only
+                        self.display_dialogs()
+                        is_first_run = False
 
-            # Ask if user wants to download media from this chat
-            download_media_option = console.input(
-                "\n[bold]Do you want to download media from this chat?[/bold] (y/n): ")
+                    # Select dialog
+                    selected_dialog = self.select_dialog()
 
-            if download_media_option.lower() == 'y':
-                # Ask for media download options
-                output_dir = console.input(
-                    "\n[bold]Enter output directory for media files:[/bold] (default: 'media'): ") or 'media'
+                    if selected_dialog is None:
+                        # User wants to quit
+                        break
+                    elif selected_dialog == 'refresh':
+                        # User wants to refresh - update in place
+                        if not await self.get_dialogs(is_refresh=True):
+                            console.print(
+                                "\n[danger]Failed to refresh chats. Exiting...[/danger]")
+                            break
+                        continue
 
-                # Ask for media type filtering
-                use_media_filter = console.input(
-                    "\n[bold]Filter media types?[/bold] (y/n, default: n): ").lower() == 'y'
-
-                # Default to including all media types
-                include_photos = True
-                include_videos = True
-                include_documents = True
-                include_stickers = True
-
-                if use_media_filter:
-                    # Create a panel for media options
-                    media_panel = Panel(
-                        "[bold]Media Type Filtering[/bold]\n\n"
-                        "Select which media types to download.",
-                        title="Media Options",
+                    # Ask what the user wants to do with this chat
+                    action_panel = Panel(
+                        "[bold]What would you like to do with this chat?[/bold]",
+                        title="Action Options",
                         border_style="cyan",
                         box=ROUNDED
                     )
-                    console.print(media_panel)
+                    console.print(action_panel)
 
-                    # Ask for each media type
-                    include_photos = console.input(
-                        "\n[bold]Include photos?[/bold] (y/n, default: y): ").lower() != 'n'
-                    include_videos = console.input(
-                        "[bold]Include videos?[/bold] (y/n, default: y): ").lower() != 'n'
-                    include_documents = console.input(
-                        "[bold]Include documents?[/bold] (y/n, default: y): ").lower() != 'n'
-                    include_stickers = console.input(
-                        "[bold]Include stickers?[/bold] (y/n, default: y): ").lower() != 'n'
-
-                    # Show summary of selected options
-                    console.print("\n[bold]Media types to include:[/bold]")
                     console.print(
-                        f"[dim]→ Photos:[/dim] [cyan]{'Yes' if include_photos else 'No'}[/cyan]")
+                        "[dim]1.[/dim] [cyan]Export messages only[/cyan]")
                     console.print(
-                        f"[dim]→ Videos:[/dim] [cyan]{'Yes' if include_videos else 'No'}[/cyan]")
+                        "[dim]2.[/dim] [cyan]Download media only[/cyan]")
                     console.print(
-                        f"[dim]→ Documents:[/dim] [cyan]{'Yes' if include_documents else 'No'}[/cyan]")
+                        "[dim]3.[/dim] [cyan]Export messages and download media[/cyan]")
                     console.print(
-                        f"[dim]→ Stickers:[/dim] [cyan]{'Yes' if include_stickers else 'No'}[/cyan]")
+                        "[dim]4.[/dim] [cyan]Go back to chat selection[/cyan]")
 
-                # Use the same date range as the export if available
-                await self.download_media(
-                    selected_dialog,
-                    options['limit'],
-                    output_dir,
-                    options['start_date'],
-                    options['end_date'],
-                    include_photos,
-                    include_videos,
-                    include_documents,
-                    include_stickers
-                )
+                    action_choice = console.input(
+                        "\n[bold]Enter your choice (1-4):[/bold] ")
 
-            # Ask if user wants to export another chat
-            another = console.input(
-                "\n[bold]Do you want to export another chat?[/bold] (y/n): ")
-            if another.lower() != 'y':
-                break
+                    if action_choice == '4':
+                        # Go back to chat selection
+                        continue
 
-        # Disconnect from Telegram
-        if self.client:
-            with console.status("[info]Disconnecting from Telegram...[/info]", spinner="dots") as status:
-                await self.client.disconnect()
-                time.sleep(0.5)
-                status.update("[success]Disconnected![/success]")
-                time.sleep(0.5)
+                    # Get export options if needed
+                    options = None
+                    if action_choice in ['1', '3']:
+                        options = self.get_export_options()
 
-        # Farewell message
-        farewell_panel = Panel(
-            "[success]Thank you for using ChatShift![/success]\n\n"
-            "[subtitle]Your chats have been exported successfully.[/subtitle]",
-            title="Goodbye",
-            border_style="border",
-            box=MINIMAL,
-            padding=(1, 2)
-        )
-        console.print(farewell_panel)
+                        # Handle custom file naming if enabled
+                        output_file = options['output_file']
+                        if options['use_custom_naming'] and options['file_pattern']:
+                            # Replace {chat_name} with the actual chat name
+                            chat_name = selected_dialog.name
+                            # Sanitize chat name for file system
+                            chat_name = ''.join(
+                                c for c in chat_name if c.isalnum() or c in ' _-').strip()
+                            # Replace spaces with underscores
+                            chat_name = chat_name.replace(' ', '_')
+
+                            # Apply the pattern
+                            output_file = options['file_pattern'].replace(
+                                "{chat_name}", chat_name)
+
+                            # Replace date and time placeholders
+                            current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+                            current_time = datetime.datetime.now().strftime("%H%M")
+                            output_file = output_file.replace(
+                                "{date}", current_date).replace("{time}", current_time)
+
+                            # Add file extension
+                            output_file += options['file_extension']
+
+                            # Update the output file in options
+                            options['output_file'] = output_file
+
+                            # Show the final file name
+                            console.print(
+                                f"[dim]→ Final file name:[/dim] [cyan]{output_file}[/cyan]")
+
+                    # Export messages if requested
+                    if action_choice in ['1', '3']:
+                        await self.export_chat(
+                            selected_dialog,
+                            options['limit'],
+                            options['output_file'],
+                            options['start_date'],
+                            options['end_date'],
+                            options['include_photos'],
+                            options['include_videos'],
+                            options['include_documents'],
+                            options['include_audio'],
+                            options['include_stickers'],
+                            options['include_voice'],
+                            options['custom_name_info'] if options['use_custom_naming'] else None
+                        )
+
+                    # Download media if requested
+                    if action_choice in ['2', '3']:
+                        # Ask for media download options
+                        output_dir = console.input(
+                            "\n[bold]Enter output directory for media files:[/bold] (default: 'media'): ") or 'media'
+
+                        # Ask for media type filtering
+                        use_media_filter = console.input(
+                            "\n[bold]Filter media types?[/bold] (y/n, default: n): ").lower() == 'y'
+
+                        # Default to including all media types
+                        include_photos = True
+                        include_videos = True
+                        include_documents = True
+                        include_stickers = True
+
+                        if use_media_filter:
+                            # Create a panel for media options
+                            media_panel = Panel(
+                                "[bold]Media Type Filtering[/bold]\n\n"
+                                "Select which media types to download.",
+                                title="Media Options",
+                                border_style="cyan",
+                                box=ROUNDED
+                            )
+                            console.print(media_panel)
+
+                            # Ask for each media type
+                            include_photos = console.input(
+                                "\n[bold]Include photos?[/bold] (y/n, default: y): ").lower() != 'n'
+                            include_videos = console.input(
+                                "[bold]Include videos?[/bold] (y/n, default: y): ").lower() != 'n'
+                            include_documents = console.input(
+                                "[bold]Include documents?[/bold] (y/n, default: y): ").lower() != 'n'
+                            include_stickers = console.input(
+                                "[bold]Include stickers?[/bold] (y/n, default: y): ").lower() != 'n'
+
+                            # Show summary of selected options
+                            console.print(
+                                "\n[bold]Media types to include:[/bold]")
+                            console.print(
+                                f"[dim]→ Photos:[/dim] [cyan]{'Yes' if include_photos else 'No'}[/cyan]")
+                            console.print(
+                                f"[dim]→ Videos:[/dim] [cyan]{'Yes' if include_videos else 'No'}[/cyan]")
+                            console.print(
+                                f"[dim]→ Documents:[/dim] [cyan]{'Yes' if include_documents else 'No'}[/cyan]")
+                            console.print(
+                                f"[dim]→ Stickers:[/dim] [cyan]{'Yes' if include_stickers else 'No'}[/cyan]")
+
+                        # Use the same date range as the export if available
+                        start_date = options['start_date'] if options else None
+                        end_date = options['end_date'] if options else None
+                        limit = options['limit'] if options else DEFAULT_MESSAGE_LIMIT
+
+                        await self.download_media(
+                            selected_dialog,
+                            limit,
+                            output_dir,
+                            start_date,
+                            end_date,
+                            include_photos,
+                            include_videos,
+                            include_documents,
+                            include_stickers
+                        )
+
+                    # Ask if user wants to export another chat
+                    another = console.input(
+                        "\n[bold]Do you want to process another chat?[/bold] (y/n): ")
+                    if another.lower() != 'y':
+                        break
+
+                except KeyboardInterrupt:
+                    # Handle Ctrl+C gracefully
+                    console.print(
+                        "\n[warning]Operation cancelled by user.[/warning]")
+
+                    # Ask if user wants to continue with the program
+                    try:
+                        continue_program = console.input(
+                            "\n[bold]Do you want to continue using ChatShift?[/bold] (y/n): ")
+                        if continue_program.lower() != 'y':
+                            break
+                    except KeyboardInterrupt:
+                        # If user presses Ctrl+C again, exit
+                        console.print(
+                            "\n[warning]Exiting ChatShift...[/warning]")
+                        break
+
+            # Disconnect from Telegram
+            if self.client:
+                with console.status("[info]Disconnecting from Telegram...[/info]", spinner="dots") as status:
+                    await self.client.disconnect()
+                    time.sleep(0.5)
+                    status.update("[success]Disconnected![/success]")
+                    time.sleep(0.5)
+
+            # Farewell message
+            farewell_panel = Panel(
+                "[success]Thank you for using ChatShift![/success]\n\n"
+                "[subtitle]Your chats have been exported successfully.[/subtitle]",
+                title="Goodbye",
+                border_style="border",
+                box=MINIMAL,
+                padding=(1, 2)
+            )
+            console.print(farewell_panel)
+
+        except KeyboardInterrupt:
+            # Handle Ctrl+C at the top level
+            console.print(
+                "\n[warning]Operation cancelled by user. Exiting ChatShift...[/warning]")
+
+            # Disconnect from Telegram if connected
+            if self.client:
+                try:
+                    with console.status("[info]Disconnecting from Telegram...[/info]", spinner="dots") as status:
+                        await self.client.disconnect()
+                        status.update("[success]Disconnected![/success]")
+                except Exception:
+                    pass
+
+        except Exception as e:
+            # Handle any other exceptions
+            console.print(f"\n[danger]An error occurred: {str(e)}[/danger]")
+
+            # Disconnect from Telegram if connected
+            if self.client:
+                try:
+                    with console.status("[info]Disconnecting from Telegram...[/info]", spinner="dots") as status:
+                        await self.client.disconnect()
+                        status.update("[success]Disconnected![/success]")
+                except Exception:
+                    pass
 
     async def download_media(self, dialog, limit, output_dir, start_date=None, end_date=None,
                              include_photos=True, include_videos=True, include_documents=True,

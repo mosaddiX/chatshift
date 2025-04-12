@@ -65,7 +65,9 @@ Follow the interactive prompts to select and export your chats.
 - Improved export details display
 - Date validation with helpful error messages
 - Media download feature with filtering options (photos, videos, documents, stickers)
-- Option to download media after exporting chat
+- Option to choose between exporting messages, downloading media, or both
+- Graceful handling of keyboard interrupts (Ctrl+C)
+- Improved error handling and recovery
 
 ## Features in v0.4
 

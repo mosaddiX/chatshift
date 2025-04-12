@@ -18,7 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved export details display
 - Date validation with helpful error messages
 - Media download feature with filtering options (photos, videos, documents, stickers)
-- Option to download media after exporting chat
+- Option to choose between exporting messages, downloading media, or both
+- Graceful handling of keyboard interrupts (Ctrl+C)
+- Improved error handling and recovery
 
 ### Removed
 - Message type filtering (text, media, service, forwarded, replies) due to implementation issues

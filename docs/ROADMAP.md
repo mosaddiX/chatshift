@@ -43,6 +43,8 @@ This document outlines the planned development path for ChatShift.
 - ❌ Format customization
 - ❌ Message type filtering (removed due to implementation issues)
 - ✅ Media download feature
+- ✅ Improved error handling and recovery
+- ✅ Option to choose between exporting messages, downloading media, or both
 - ❌ Advanced search functionality
 - ❌ Message content filtering
 - ❌ Multiple chat export
@@ -86,6 +88,5 @@ This document outlines the planned development path for ChatShift.
 - Integration with other messaging platforms
 - Backup and restore functionality
 - Scheduled exports
-- Media download options
 - Batch operations for multiple chats
 - Configuration profiles for different export settings
