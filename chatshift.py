@@ -20,7 +20,7 @@ from telethon import TelegramClient
 from telethon.tl.types import User, Chat, Channel, Dialog
 
 # Rich terminal components
-from rich.console import Console
+from rich.console import Console, Group
 from rich.panel import Panel
 from rich.progress import Progress, TextColumn, BarColumn, SpinnerColumn, TimeElapsedColumn
 from rich.table import Table
@@ -112,9 +112,11 @@ class ChatShiftCLI:
 
         # Create a panel with the version info
         panel = Panel(
-            Align.center(version_text) + "\n" +
-            Align.center(tagline) + "\n" +
-            Align.center(author),
+            Group(
+                Align.center(version_text),
+                Align.center(tagline),
+                Align.center(author)
+            ),
             box=ROUNDED,
             border_style="cyan",
             padding=(1, 4)
@@ -436,20 +438,27 @@ class ChatShiftCLI:
     def open_file(self, file_path):
         """Open a file with the default application"""
         try:
-            if os.name == 'nt':  # Windows
+            # Import platform-specific modules
+            import platform
+            import subprocess
+
+            # Different approach based on platform
+            system = platform.system()
+
+            if system == 'Windows':
+                # Windows
                 os.startfile(file_path)
-            else:  # macOS and Linux
-                import subprocess
-                try:
-                    # Try the Linux command first
-                    subprocess.run(['xdg-open', file_path], check=False)
-                except FileNotFoundError:
-                    try:
-                        # Try the macOS command
-                        subprocess.run(['open', file_path], check=False)
-                    except FileNotFoundError:
-                        console.print(
-                            "[bold yellow]Could not find a program to open the file.[/bold yellow]")
+            elif system == 'Darwin':
+                # macOS
+                subprocess.call(['open', file_path])
+            elif system == 'Linux':
+                # Linux
+                subprocess.call(['xdg-open', file_path])
+            else:
+                # Unknown OS
+                console.print(
+                    "[bold yellow]Unsupported operating system.[/bold yellow]")
+
         except Exception as e:
             console.print(
                 f"[bold red]Failed to open file:[/bold red] {str(e)}")
