@@ -1,6 +1,10 @@
 # ChatShift
 
-ChatShift is a Python-based tool to export Telegram chats into various text formats with an elegant and simple interactive terminal interface.
+<p align="center">
+  <img src="images/welcome.png" alt="ChatShift Welcome Screen" width="600">
+</p>
+
+ChatShift is a powerful Python-based tool for exporting Telegram chats into various text formats. With its elegant and modern terminal interface, ChatShift makes it easy to export single or multiple chats, download media files, and generate detailed statistics about your conversations.
 
 ## Features
 

@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved multiple chat selection interface with streamlined view that avoids duplicate output
 - Export statistics and summaries
 - Performance optimizations with batch processing and parallel downloads
+- Redesigned welcome screen with a more compact and elegant appearance
 
 ### Fixed
 - Fixed async context manager issue with status updates

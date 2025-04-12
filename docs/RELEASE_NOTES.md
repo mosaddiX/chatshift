@@ -39,6 +39,7 @@ We're excited to announce the release of ChatShift 1.0.0! This marks the first s
 
 ### User Experience Improvements
 - Elegant and minimal terminal interface
+- Redesigned welcome screen with a more compact and modern appearance
 - Real-time progress updates
 - Improved error handling and recovery
 - Session management and authentication improvements

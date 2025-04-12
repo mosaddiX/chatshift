@@ -61,6 +61,7 @@ This document outlines the planned development path for ChatShift.
 - ✅ Proper package structure with setup.py
 - ✅ Comprehensive documentation
 - ✅ Testing guide
+- ✅ Redesigned welcome screen with a more compact and elegant appearance
 
 - ❌ Preview functionality before export (postponed for future release)
 - ❌ Caching for frequently accessed data (postponed for future release)

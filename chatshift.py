@@ -47,7 +47,7 @@ from contextlib import asynccontextmanager
 import colorama
 from colorama import Fore, Back, Style as ColoramaStyle
 from termcolor import colored
-import pyfiglet
+# import pyfiglet (no longer needed)
 
 # Initialize colorama
 colorama.init(autoreset=True)
@@ -212,53 +212,31 @@ class ChatShiftCLI:
         # Clear the screen for a clean start
         os.system('cls' if os.name == 'nt' else 'clear')
 
-        # Create a minimal, elegant logo
-        logo = pyfiglet.figlet_format("ChatShift", font="small")
+        # Create a compact, modern header
+        header = Text()
+        header.append("✧ ", style="cyan")
+        header.append("ChatShift", style="bold cyan")
+        header.append(" ✧\n", style="cyan")
 
-        # Create a layout for the header
-        layout = Layout()
-        layout.split_column(
-            Layout(name="logo"),
-            Layout(name="info")
+        # Add version and description in a single line
+        header.append("v1.0.0 ", style="dim")
+        header.append("• ", style="dim")
+        header.append("Telegram Chat Exporter", style="italic dim")
+
+        # Create a compact panel with the header
+        header_panel = Panel(
+            Align.center(header),
+            box=ROUNDED,
+            border_style="cyan",
+            padding=(1, 3),
+            title="WELCOME",
+            subtitle="by mosaddiX"
         )
 
-        # Add the logo with gradient effect
-        logo_text = Text()
-        lines = logo.split('\n')
-        for line in lines:
-            logo_text.append(line, style="gradient('#8be9fd', '#bd93f9')")
-            logo_text.append('\n')
-
-        # Create the logo panel
-        logo_panel = Panel(
-            Align.center(logo_text),
-            box=MINIMAL,
-            border_style="border",
-            padding=(0, 2)
-        )
-
-        # Create the info panel
-        info_panel = Panel(
-            Group(
-                Align.center(Text("v0.5.0", style="subtitle")),
-                Align.center(
-                    Text("Telegram to WhatsApp Chat Exporter", style="muted")),
-                Align.center(Text("Developed by mosaddiX", style="muted"))
-            ),
-            box=MINIMAL,
-            border_style="border",
-            padding=(0, 2)
-        )
-
-        # Add panels to layout
-        layout["logo"].update(logo_panel)
-        layout["info"].update(info_panel)
-
-        # Display the layout
-        console.print(layout)
-
-        # Add some space
-        console.print("")
+        # Print the header panel
+        console.print("\n")
+        console.print(Align.center(header_panel, vertical="middle"))
+        console.print("\n")
 
     async def authenticate(self):
         """Authenticate with Telegram"""
