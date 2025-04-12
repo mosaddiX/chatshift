@@ -11,6 +11,7 @@ Version: 0.4.0
 
 import os
 import sys
+import time
 import asyncio
 import logging
 from datetime import datetime
@@ -18,12 +19,52 @@ from dotenv import load_dotenv
 from telethon import TelegramClient
 from telethon.tl.types import User, Chat, Channel, Dialog
 
+# Rich terminal components
+from rich.console import Console
+from rich.panel import Panel
+from rich.progress import Progress, TextColumn, BarColumn, SpinnerColumn, TimeElapsedColumn
+from rich.table import Table
+from rich.text import Text
+from rich.prompt import Prompt, Confirm
+from rich.style import Style
+from rich.theme import Theme
+from rich.live import Live
+from rich.align import Align
+from rich.box import ROUNDED, DOUBLE, HEAVY
+
+# Additional styling
+import colorama
+from colorama import Fore, Back, Style as ColoramaStyle
+from termcolor import colored
+import pyfiglet
+
+# Initialize colorama
+colorama.init(autoreset=True)
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Create a custom theme for Rich
+custom_theme = Theme({
+    "info": "dim cyan",
+    "warning": "magenta",
+    "danger": "bold red",
+    "success": "bold green",
+    "title": "bold blue",
+    "subtitle": "italic cyan",
+    "highlight": "bold yellow",
+    "user": "bold cyan",
+    "group": "bold green",
+    "channel": "bold magenta",
+    "unread": "bold red",
+})
+
+# Create a console with the custom theme
+console = Console(theme=custom_theme, highlight=True)
 
 # Load environment variables
 load_dotenv()
@@ -40,125 +81,262 @@ DEFAULT_MESSAGE_LIMIT = int(os.getenv('MESSAGE_LIMIT', '5000'))
 
 
 class ChatShiftCLI:
-    """Simple CLI for ChatShift"""
+    """Elegant CLI for ChatShift"""
 
     def __init__(self):
         """Initialize the CLI"""
         self.client = None
         self.dialogs = []
+        self.spinner_chars = ['⣾', '⣽', '⣻', '⢿', '⡿', '⣟', '⣯', '⣷']
+
+    def display_logo(self):
+        """Display the ChatShift logo"""
+        # Create a fancy logo with pyfiglet
+        logo = pyfiglet.figlet_format("ChatShift", font="slant")
+        colored_logo = ""
+
+        # Add gradient coloring to the logo
+        colors = [Fore.CYAN, Fore.BLUE, Fore.MAGENTA]
+        lines = logo.split('\n')
+        for i, line in enumerate(lines):
+            color_index = i % len(colors)
+            colored_logo += colors[color_index] + line + '\n'
+
+        # Print the logo
+        print(colored_logo)
+
+        # Display version and tagline
+        version_text = Text("v0.4.0", style="italic cyan")
+        tagline = Text("Telegram to WhatsApp Chat Exporter", style="italic")
+        author = Text("Developed by mosaddiX", style="dim")
+
+        # Create a panel with the version info
+        panel = Panel(
+            Align.center(version_text) + "\n" +
+            Align.center(tagline) + "\n" +
+            Align.center(author),
+            box=ROUNDED,
+            border_style="cyan",
+            padding=(1, 4)
+        )
+
+        # Display the panel
+        console.print(panel)
 
     async def authenticate(self):
         """Authenticate with Telegram"""
-        print("\n=== Telegram Authentication ===")
+        # Create an authentication panel
+        auth_panel = Panel(
+            "[bold]Telegram Authentication[/bold]\n\n"
+            "Connecting to Telegram servers...",
+            title="Authentication",
+            border_style="cyan",
+            box=ROUNDED
+        )
+        console.print(auth_panel)
 
         # Create the client
         self.client = TelegramClient('chatshift_session', API_ID, API_HASH)
 
-        # Connect to Telegram
-        await self.client.connect()
+        # Connect to Telegram with a spinner
+        with console.status("[bold cyan]Connecting to Telegram...[/bold cyan]", spinner="dots") as status:
+            await self.client.connect()
+            status.update("[bold green]Connected![/bold green]")
+            time.sleep(0.5)
 
         # Check if already authenticated
         if not await self.client.is_user_authorized():
-            print(f"Logging in as {PHONE}...")
+            console.print(f"[bold]Logging in as[/bold] [cyan]{PHONE}[/cyan]")
 
-            # Send code request
-            await self.client.send_code_request(PHONE)
+            # Send code request with a spinner
+            with console.status("[bold cyan]Sending authentication code...[/bold cyan]", spinner="dots") as status:
+                await self.client.send_code_request(PHONE)
+                status.update("[bold green]Code sent![/bold green]")
+                time.sleep(0.5)
 
-            # Ask for the code
-            code = input("Enter the code you received: ")
+            # Ask for the code with a styled prompt
+            code = console.input(
+                "\n[bold]Enter the code you received:[/bold] ")
 
             try:
-                # Sign in with the code
-                await self.client.sign_in(PHONE, code)
+                # Sign in with the code (with spinner)
+                with console.status("[bold cyan]Verifying code...[/bold cyan]", spinner="dots") as status:
+                    await self.client.sign_in(PHONE, code)
+                    status.update(
+                        "[bold green]Verification successful![/bold green]")
+                    time.sleep(0.5)
             except Exception as e:
-                print(f"Error during authentication: {str(e)}")
+                console.print(
+                    f"[bold red]Error during authentication:[/bold red] {str(e)}")
                 return False
 
-        print("Successfully authenticated with Telegram!")
+        # Success message
+        console.print(
+            "[bold green]✓ Successfully authenticated with Telegram![/bold green]")
         return True
 
     async def get_dialogs(self):
         """Get all dialogs (chats)"""
-        print("\nFetching your chats...")
+        # Create a panel for the dialog fetching process
+        fetch_panel = Panel(
+            "[bold]Fetching Your Chats[/bold]\n\n"
+            "Retrieving your Telegram conversations...",
+            title="Chats",
+            border_style="cyan",
+            box=ROUNDED
+        )
+        console.print(fetch_panel)
 
         try:
-            # Get all dialogs
-            self.dialogs = await self.client.get_dialogs()
-            print(f"Found {len(self.dialogs)} chats.")
+            # Get all dialogs with a spinner
+            with console.status("[bold cyan]Retrieving chats from Telegram...[/bold cyan]", spinner="dots") as status:
+                self.dialogs = await self.client.get_dialogs()
+                status.update(
+                    f"[bold green]Found {len(self.dialogs)} chats![/bold green]")
+                time.sleep(0.5)
             return True
         except Exception as e:
-            print(f"Error fetching chats: {str(e)}")
+            console.print(
+                f"[bold red]Error fetching chats:[/bold red] {str(e)}")
             return False
 
     def display_dialogs(self):
         """Display all dialogs in a numbered list"""
-        print("\n=== Your Telegram Chats ===")
+        # Create a table for the dialogs
+        table = Table(
+            title="Your Telegram Chats",
+            box=ROUNDED,
+            border_style="cyan",
+            header_style="bold cyan",
+            show_lines=True,
+            title_style="bold cyan",
+            expand=True
+        )
 
-        # Display header
-        print(f"{'ID':<4} {'Type':<8} {'Name':<40} {'Unread':<6}")
-        print("-" * 60)
+        # Add columns
+        table.add_column("ID", justify="center", style="dim", width=4)
+        table.add_column("Type", justify="center", width=10)
+        table.add_column("Name", width=40)
+        table.add_column("Unread", justify="center", width=8)
 
-        # Display each dialog
+        # Add rows for each dialog
         for i, dialog in enumerate(self.dialogs, 1):
             entity = dialog.entity
 
-            # Determine entity type
+            # Determine entity type and style
             if isinstance(entity, User):
-                entity_type = "User"
+                entity_type = "👤 User"
+                type_style = "user"
             elif isinstance(entity, Chat):
-                entity_type = "Group"
+                entity_type = "👥 Group"
+                type_style = "group"
             else:
-                entity_type = "Channel"
+                entity_type = "📢 Channel"
+                type_style = "channel"
 
             # Format unread count
-            unread = f"{dialog.unread_count}" if dialog.unread_count > 0 else "0"
+            if dialog.unread_count > 0:
+                unread = f"[unread]{dialog.unread_count}[/unread]"
+            else:
+                unread = "0"
 
-            # Print dialog info
-            print(f"{i:<4} {entity_type:<8} {dialog.name:<40} {unread:<6}")
+            # Add row to table
+            table.add_row(
+                str(i),
+                f"[{type_style}]{entity_type}[/{type_style}]",
+                dialog.name,
+                unread
+            )
+
+        # Print the table
+        console.print(table)
 
     def select_dialog(self):
         """Let the user select a dialog"""
+        # Create a styled prompt
+        options_panel = Panel(
+            "[bold]Options:[/bold]\n\n"
+            "• Enter a [cyan]number[/cyan] to select a chat\n"
+            "• Enter [cyan]r[/cyan] to refresh the chat list\n"
+            "• Enter [cyan]q[/cyan] to quit",
+            title="Chat Selection",
+            border_style="cyan",
+            box=ROUNDED,
+            width=40
+        )
+        console.print(options_panel)
+
         while True:
             try:
-                choice = input(
-                    "\nEnter the ID of the chat to export (or 'r' to refresh, 'q' to quit): ")
+                # Styled input prompt
+                choice = console.input("\n[bold]Enter your choice:[/bold] ")
 
                 if choice.lower() == 'q':
+                    console.print("[dim]Exiting...[/dim]")
                     return None
                 elif choice.lower() == 'r':
+                    console.print("[dim]Refreshing chats...[/dim]")
                     return 'refresh'
 
                 choice = int(choice)
                 if 1 <= choice <= len(self.dialogs):
-                    return self.dialogs[choice - 1]
+                    selected = self.dialogs[choice - 1]
+                    console.print(
+                        f"[bold green]Selected:[/bold green] [cyan]{selected.name}[/cyan]")
+                    return selected
                 else:
-                    print(
-                        f"Please enter a number between 1 and {len(self.dialogs)}.")
+                    console.print(
+                        f"[bold yellow]Please enter a number between 1 and {len(self.dialogs)}.[/bold yellow]")
             except ValueError:
-                print("Please enter a valid number.")
+                console.print(
+                    "[bold yellow]Please enter a valid number.[/bold yellow]")
 
     def get_export_options(self):
         """Get export options from the user"""
-        print("\n=== Export Options ===")
+        # Create a panel for export options
+        export_panel = Panel(
+            "[bold]Export Configuration[/bold]",
+            title="Export Options",
+            border_style="cyan",
+            box=ROUNDED
+        )
+        console.print(export_panel)
 
-        # Get message limit
+        # Get message limit with validation
         while True:
             try:
-                limit_input = input(
-                    f"Message limit (default: {DEFAULT_MESSAGE_LIMIT}, 0 for all): ")
+                # Styled input for message limit
+                limit_input = console.input(
+                    f"[bold]Message limit[/bold] [dim](default: {DEFAULT_MESSAGE_LIMIT}, 0 for all):[/dim] ")
                 limit = int(
                     limit_input) if limit_input else DEFAULT_MESSAGE_LIMIT
+
                 if limit < 0:
-                    print("Please enter a positive number.")
+                    console.print(
+                        "[bold yellow]Please enter a positive number.[/bold yellow]")
                     continue
+
+                # Show confirmation of the limit
+                if limit == 0:
+                    console.print(
+                        "[dim]→ Will export[/dim] [cyan]all messages[/cyan]")
+                else:
+                    console.print(
+                        f"[dim]→ Will export up to[/dim] [cyan]{limit} messages[/cyan]")
                 break
             except ValueError:
-                print("Please enter a valid number.")
+                console.print(
+                    "[bold yellow]Please enter a valid number.[/bold yellow]")
 
-        # Get output file
-        output_file = input(f"Output file (default: {DEFAULT_OUTPUT_FILE}): ")
+        # Get output file with styled input
+        output_file = console.input(
+            f"\n[bold]Output file[/bold] [dim](default: {DEFAULT_OUTPUT_FILE}):[/dim] ")
+
         if not output_file:
             output_file = DEFAULT_OUTPUT_FILE
+
+        # Show confirmation of the output file
+        console.print(f"[dim]→ Will save to[/dim] [cyan]{output_file}[/cyan]")
 
         return {
             'limit': limit,
@@ -167,51 +345,92 @@ class ChatShiftCLI:
 
     async def export_chat(self, dialog, limit, output_file):
         """Export a chat to WhatsApp format"""
-        print(f"\nExporting chat: {dialog.name}")
-        print(f"Message limit: {limit}")
-        print(f"Output file: {output_file}")
+        # Create an export panel with details
+        export_panel = Panel(
+            f"[bold]Exporting Chat:[/bold] [cyan]{dialog.name}[/cyan]\n"
+            f"[bold]Message Limit:[/bold] [cyan]{limit if limit > 0 else 'All'}[/cyan]\n"
+            f"[bold]Output File:[/bold] [cyan]{output_file}[/cyan]",
+            title="Export Details",
+            border_style="cyan",
+            box=ROUNDED
+        )
+        console.print(export_panel)
 
         # Set a reasonable default if limit is 0
         actual_limit = 5000 if limit == 0 else limit
 
         try:
-            # Get messages
-            print("Downloading messages...")
-            messages = []
-            message_count = 0
+            # Create a progress display
+            with console.status("[bold cyan]Preparing to download messages...[/bold cyan]", spinner="dots") as status:
+                # Initialize counters
+                messages = []
+                message_count = 0
 
-            async for message in self.client.iter_messages(dialog.entity, limit=actual_limit):
-                # Include all non-empty messages
-                if message:
-                    messages.append(message)
+                # Show progress message
+                status.update("[bold cyan]Downloading messages...[/bold cyan]")
 
-                # Update progress
-                message_count += 1
-                if message_count % 100 == 0:
-                    print(f"Downloaded {message_count} messages...")
+                # Download messages with progress updates
+                async for message in self.client.iter_messages(dialog.entity, limit=actual_limit):
+                    # Include all non-empty messages
+                    if message:
+                        messages.append(message)
 
-            print(f"Downloaded {message_count} messages.")
+                    # Update progress
+                    message_count += 1
+                    if message_count % 50 == 0:
+                        status.update(
+                            f"[bold cyan]Downloaded {message_count} messages...[/bold cyan]")
 
-            # Format messages in WhatsApp style
-            print("Formatting messages...")
-            formatted_messages = await self.format_messages(messages, dialog.name)
+                # Show completion message
+                status.update(
+                    f"[bold green]Downloaded {message_count} messages![/bold green]")
+                time.sleep(0.5)
 
-            # Write to file
-            print("Writing to file...")
-            with open(output_file, 'w', encoding='utf-8') as f:
-                f.write('\n'.join(formatted_messages))
+                # Format messages
+                status.update("[bold cyan]Formatting messages...[/bold cyan]")
+                formatted_messages = await self.format_messages(messages, dialog.name)
+                time.sleep(0.5)
 
-            print(f"\nExport completed successfully!")
-            print(f"Exported {len(messages)} messages to {output_file}")
+                # Write to file
+                status.update("[bold cyan]Writing to file...[/bold cyan]")
+                with open(output_file, 'w', encoding='utf-8') as f:
+                    f.write('\n'.join(formatted_messages))
+                time.sleep(0.5)
+
+                # Show completion message
+                status.update(
+                    "[bold green]Export completed successfully![/bold green]")
+                time.sleep(0.5)
+
+            # Show success message with details
+            success_panel = Panel(
+                f"[bold green]✓ Export completed successfully![/bold green]\n\n"
+                f"[bold]Messages Exported:[/bold] [cyan]{len(messages)}[/cyan]\n"
+                f"[bold]Output File:[/bold] [cyan]{output_file}[/cyan]",
+                title="Success",
+                border_style="green",
+                box=ROUNDED
+            )
+            console.print(success_panel)
 
             # Ask if user wants to open the file
-            open_file = input("Do you want to open the file? (y/n): ")
+            open_file = console.input(
+                "\n[bold]Do you want to open the file?[/bold] (y/n): ")
             if open_file.lower() == 'y':
-                self.open_file(output_file)
+                with console.status("[bold cyan]Opening file...[/bold cyan]", spinner="dots"):
+                    self.open_file(output_file)
+                    time.sleep(0.5)
 
             return True
         except Exception as e:
-            print(f"Error exporting chat: {str(e)}")
+            # Show error message
+            error_panel = Panel(
+                f"[bold red]Error exporting chat:[/bold red]\n{str(e)}",
+                title="Error",
+                border_style="red",
+                box=ROUNDED
+            )
+            console.print(error_panel)
             return False
 
     def open_file(self, file_path):
@@ -219,7 +438,7 @@ class ChatShiftCLI:
         try:
             if os.name == 'nt':  # Windows
                 os.startfile(file_path)
-            elif os.name == 'posix':  # macOS and Linux
+            else:  # macOS and Linux
                 import subprocess
                 try:
                     # Try the Linux command first
@@ -229,9 +448,11 @@ class ChatShiftCLI:
                         # Try the macOS command
                         subprocess.run(['open', file_path], check=False)
                     except FileNotFoundError:
-                        print("Could not find a program to open the file.")
+                        console.print(
+                            "[bold yellow]Could not find a program to open the file.[/bold yellow]")
         except Exception as e:
-            print(f"Failed to open file: {str(e)}")
+            console.print(
+                f"[bold red]Failed to open file:[/bold red] {str(e)}")
 
     def format_date(self, date):
         """Format date in WhatsApp style: DD/MM/YY, HH:MM"""
@@ -330,20 +551,24 @@ class ChatShiftCLI:
 
     async def run(self):
         """Run the CLI"""
-        print("\n=== ChatShift CLI v0.4.0 ===")
-        print("Telegram to WhatsApp Chat Exporter")
-        print("Developed by mosaddiX")
+        # Clear the screen for a clean start
+        os.system('cls' if os.name == 'nt' else 'clear')
+
+        # Display the logo
+        self.display_logo()
 
         # Authenticate with Telegram
         if not await self.authenticate():
-            print("Authentication failed. Exiting...")
+            console.print(
+                "\n[bold red]Authentication failed. Exiting...[/bold red]")
             return
 
         # Main loop
         while True:
             # Get dialogs
             if not await self.get_dialogs():
-                print("Failed to fetch chats. Exiting...")
+                console.print(
+                    "\n[bold red]Failed to fetch chats. Exiting...[/bold red]")
                 break
 
             # Display dialogs
@@ -366,15 +591,28 @@ class ChatShiftCLI:
             await self.export_chat(selected_dialog, options['limit'], options['output_file'])
 
             # Ask if user wants to export another chat
-            another = input("\nDo you want to export another chat? (y/n): ")
+            another = console.input(
+                "\n[bold]Do you want to export another chat?[/bold] (y/n): ")
             if another.lower() != 'y':
                 break
 
         # Disconnect from Telegram
         if self.client:
-            await self.client.disconnect()
+            with console.status("[bold cyan]Disconnecting from Telegram...[/bold cyan]", spinner="dots") as status:
+                await self.client.disconnect()
+                time.sleep(0.5)
+                status.update("[bold green]Disconnected![/bold green]")
+                time.sleep(0.5)
 
-        print("\nThank you for using ChatShift CLI!")
+        # Farewell message
+        farewell_panel = Panel(
+            "[bold green]Thank you for using ChatShift![/bold green]\n\n"
+            "[italic]Your chats have been exported successfully.[/italic]",
+            title="Goodbye",
+            border_style="cyan",
+            box=ROUNDED
+        )
+        console.print(farewell_panel)
 
 
 async def main():
