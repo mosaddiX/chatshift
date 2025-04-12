@@ -109,7 +109,8 @@ FORMAT_TEMPLATES = {
         'description': 'Standard WhatsApp format',
         'date_format': '%d/%m/%y, %H:%M',
         'message_format': '{date_str} - {sender_name}: {content}{edited_suffix}',
-        'header_format': '{date_str} - Messages and calls are end-to-end encrypted. No one outside of this chat, not even WhatsApp, can read or listen to them. Tap to learn more.',
+        'header_format': '{date_str} - Chat export from {chat_title}',
+        'include_header': True,
         'media_placeholder': '<Media omitted>',
         'unknown_message_placeholder': '<Message>',
         'error_placeholder': '<Message format error>',
@@ -121,6 +122,7 @@ FORMAT_TEMPLATES = {
         'date_format': '%Y-%m-%d %H:%M:%S',
         'message_format': '[{date_str}] {sender_name}: {content}{edited_suffix}',
         'header_format': '--- Telegram Chat Export ---\nChat: {chat_title}\nExport date: {date_str}\n---',
+        'include_header': True,
         'media_placeholder': '[Media]',
         'unknown_message_placeholder': '[Message]',
         'error_placeholder': '[Error: Message could not be formatted]',
@@ -132,6 +134,7 @@ FORMAT_TEMPLATES = {
         'date_format': '%Y-%m-%d %H:%M',
         'message_format': '{sender_name} [{date_str}]: {content}{edited_suffix}',
         'header_format': '# {chat_title} - Export Date: {date_str}',
+        'include_header': True,
         'media_placeholder': '[attachment]',
         'unknown_message_placeholder': '[message]',
         'error_placeholder': '[error: could not format message]',
@@ -143,9 +146,22 @@ FORMAT_TEMPLATES = {
         'date_format': '%Y-%m-%d %H:%M',
         'message_format': '{sender_name} ({date_str}): {content}{edited_suffix}',
         'header_format': '=== {chat_title} ===\nExported on {date_str}\n',
+        'include_header': True,
         'media_placeholder': '[media]',
         'unknown_message_placeholder': '[message]',
         'error_placeholder': '[error]',
+        'edited_suffix': ' (edited)'
+    },
+    'no_header': {
+        'name': 'No Header',
+        'description': 'Format without any header',
+        'date_format': '%d/%m/%y, %H:%M',
+        'message_format': '{date_str} - {sender_name}: {content}{edited_suffix}',
+        'header_format': '',  # Empty header
+        'include_header': False,  # Don't include header
+        'media_placeholder': '<Media>',
+        'unknown_message_placeholder': '<Message>',
+        'error_placeholder': '<Error>',
         'edited_suffix': ' (edited)'
     },
     'custom': {
@@ -156,6 +172,7 @@ FORMAT_TEMPLATES = {
         'message_format': '{date_str} - {sender_name}: {content}{edited_suffix}',
         # Default, will be overridden by user input
         'header_format': '--- {chat_title} ---\nExport date: {date_str}',
+        'include_header': True,  # Default, will be overridden by user input
         'media_placeholder': '<Media>',  # Default, will be overridden by user input
         # Default, will be overridden by user input
         'unknown_message_placeholder': '<Message>',
@@ -748,6 +765,13 @@ class ChatShiftCLI:
                 f"[bold]Header format:[/bold] (default: {format_template['header_format']}): ") or format_template['header_format']
             format_template['header_format'] = header_format
 
+            # Include header option
+            include_header_choice = console.input(
+                f"[bold]Include header?[/bold] (y/n, default: {'y' if format_template['include_header'] else 'n'}): ")
+            if include_header_choice.lower() in ['y', 'yes', 'n', 'no']:
+                format_template['include_header'] = include_header_choice.lower() in [
+                    'y', 'yes']
+
             # Media placeholder
             media_placeholder = console.input(
                 f"[bold]Media placeholder:[/bold] (default: {format_template['media_placeholder']}): ") or format_template['media_placeholder']
@@ -1144,9 +1168,13 @@ class ChatShiftCLI:
         if not format_template:
             format_template = FORMAT_TEMPLATES['whatsapp']
 
-        # Start with the header
-        formatted_messages = [self.format_chat_header(
-            chat_title, format_template)]
+        # Initialize the formatted messages list
+        formatted_messages = []
+
+        # Add the header if include_header is True
+        if format_template.get('include_header', True):
+            formatted_messages.append(
+                self.format_chat_header(chat_title, format_template))
 
         # Process messages in reverse order (oldest first, like WhatsApp)
         for message in reversed(messages):

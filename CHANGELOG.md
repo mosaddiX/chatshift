@@ -21,9 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Option to choose between exporting messages, downloading media, or both
 - Graceful handling of keyboard interrupts (Ctrl+C)
 - Improved error handling and recovery
-- Format customization with multiple templates (WhatsApp, Telegram, Discord, Simple, Custom)
+- Format customization with multiple templates (WhatsApp, Telegram, Discord, Simple, No Header, Custom)
 - Ability to customize date formats, message formats, and placeholders
 - User-defined custom format with full control over all formatting aspects
+- Option to include or exclude the header in exported chats
+- Removed WhatsApp encryption message from default header
 
 ### Fixed
 - Fixed async context manager issue with status updates
