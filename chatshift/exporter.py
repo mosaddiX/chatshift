@@ -4,10 +4,11 @@ Telegram chat exporter module
 
 import os
 import logging
+import datetime
 from telethon.tl.types import User, Chat
 from rich.console import Console
 from rich.progress import Progress, TextColumn, BarColumn, TimeElapsedColumn, TimeRemainingColumn
-from rich.prompt import Prompt
+from rich.prompt import Prompt, Confirm
 from rich.table import Table
 from dotenv import load_dotenv
 
@@ -89,7 +90,114 @@ class ChatExporter:
                 "[bold red]Invalid input. Please enter a number.[/bold red]")
             return await self.display_dialogs(dialogs)
 
-    async def export_chat(self, dialog):
+    async def get_export_options(self):
+        """Get export options from user"""
+        # Use message limit from instance or default
+        limit = self.message_limit if hasattr(self, 'message_limit') else 5000
+
+        # Use output file from instance or default
+        output_file = self.output_file if hasattr(
+            self, 'output_file') else 'telegram_chat_export.txt'
+
+        # Ask for message limit if not set in .env
+        if limit == 0:
+            limit_input = Prompt.ask(
+                "[bold]How many messages to export? (0 for all)[/bold]",
+                default="0"
+            )
+            try:
+                limit = int(limit_input)
+            except ValueError:
+                limit = 0
+
+        # Ask for output file
+        output_file = Prompt.ask(
+            "[bold]Output file name[/bold]",
+            default=self.output_file
+        )
+
+        # Ask for date range filtering
+        use_date_filter = Confirm.ask(
+            "[bold]Filter by date range?[/bold]", default=False)
+        start_date = None
+        end_date = None
+
+        if use_date_filter:
+            # Get start date
+            start_date_str = Prompt.ask(
+                "[bold]Start date (YYYY-MM-DD, leave empty for no start date)[/bold]",
+                default=""
+            )
+            if start_date_str:
+                try:
+                    start_date = datetime.datetime.strptime(
+                        start_date_str, "%Y-%m-%d")
+                except ValueError:
+                    console.print(
+                        "[yellow]Invalid start date format. Using no start date.[/yellow]")
+
+            # Get end date
+            end_date_str = Prompt.ask(
+                "[bold]End date (YYYY-MM-DD, leave empty for no end date)[/bold]",
+                default=""
+            )
+            if end_date_str:
+                try:
+                    end_date = datetime.datetime.strptime(
+                        end_date_str, "%Y-%m-%d")
+                except ValueError:
+                    console.print(
+                        "[yellow]Invalid end date format. Using no end date.[/yellow]")
+
+        return {
+            "limit": limit,
+            "output_file": output_file,
+            "start_date": start_date,
+            "end_date": end_date
+        }
+
+    async def get_download_options(self):
+        """Get media download options from user"""
+        # Ask for output directory
+        output_dir = Prompt.ask(
+            "[bold]Output directory for media files[/bold]",
+            default="media"
+        )
+
+        # Ask for media types to download
+        console.print("[bold]Select media types to download:[/bold]")
+        include_photos = Confirm.ask("Include photos?", default=True)
+        include_videos = Confirm.ask("Include videos?", default=True)
+        include_documents = Confirm.ask("Include documents?", default=True)
+        include_audio = Confirm.ask("Include audio?", default=True)
+        include_stickers = Confirm.ask("Include stickers?", default=False)
+        include_voice = Confirm.ask("Include voice messages?", default=False)
+
+        # Ask for message limit
+        limit_input = Prompt.ask(
+            "[bold]How many messages to scan? (0 for all)[/bold]",
+            default="100"
+        )
+        try:
+            limit = int(limit_input)
+        except ValueError:
+            limit = 100
+            console.print(
+                "[yellow]Invalid limit. Using default (100).[/yellow]")
+
+        return {
+            "output_dir": output_dir,
+            "include_photos": include_photos,
+            "include_videos": include_videos,
+            "include_documents": include_documents,
+            "include_audio": include_audio,
+            "include_stickers": include_stickers,
+            "include_voice": include_voice,
+            "limit": limit
+        }
+
+    async def export_chat(self, dialog, limit=5000, output_file='telegram_chat_export.txt',
+                          start_date=None, end_date=None):
         """Export selected chat to WhatsApp format"""
         # Initialize formatter with user's ID
         me = await self.client.get_me()
@@ -106,32 +214,6 @@ class ChatExporter:
         logger.info(f"Exporting chat: {chat_title}")
         console.print(
             f"[bold green]Exporting chat: [/bold green][bold cyan]{chat_title}[/bold cyan]")
-
-        # Use message limit from instance or default
-        limit = self.message_limit if hasattr(self, 'message_limit') else 5000
-
-        # Use output file from instance or default
-        output_file = self.output_file if hasattr(
-            self, 'output_file') else 'telegram_chat_export.txt'
-
-        # If using CLI, ask for message limit and output file
-        if not hasattr(self, 'using_tui') or not self.using_tui:
-            # Ask for message limit if not set in .env
-            if limit == 0:
-                limit_input = Prompt.ask(
-                    "[bold]How many messages to export? (0 for all)[/bold]",
-                    default="0"
-                )
-                try:
-                    limit = int(limit_input)
-                except ValueError:
-                    limit = 0
-
-            # Ask for output file
-            output_file = Prompt.ask(
-                "[bold]Output file name[/bold]",
-                default=self.output_file
-            )
 
         # Fetch messages
         if not hasattr(self, 'using_tui') or not self.using_tui:
@@ -230,3 +312,102 @@ class ChatExporter:
     def set_using_tui(self, using_tui=True):
         """Set whether the exporter is being used with the TUI"""
         self.using_tui = using_tui
+
+    async def download_media(self, dialog, output_dir='media', limit=100,
+                             include_photos=True, include_videos=True, include_documents=True,
+                             include_audio=True, include_stickers=False, include_voice=False):
+        """Download media from a chat"""
+        # Get chat entity and title
+        entity = dialog.entity
+        chat_title = dialog.name
+
+        # Create output directory if it doesn't exist
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Log download start
+        logger.info(f"Downloading media from: {chat_title}")
+        console.print(
+            f"[bold green]Downloading media from: [/bold green][bold cyan]{chat_title}[/bold cyan]")
+
+        # Initialize counters
+        downloaded = 0
+        skipped = 0
+        errors = 0
+
+        # Create progress bar
+        with Progress(
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            TimeElapsedColumn(),
+            TimeRemainingColumn(),
+            console=console
+        ) as progress:
+            # Create progress task
+            task = progress.add_task(f"[cyan]Scanning messages...", total=None)
+
+            # Get messages with media
+            messages = []
+            async for message in self.client.iter_messages(entity, limit=limit):
+                if message and hasattr(message, 'media') and message.media:
+                    messages.append(message)
+                progress.update(task, advance=1, total=limit)
+
+            # Update progress task for downloading
+            progress.update(task, description="[cyan]Downloading media...", total=len(
+                messages), completed=0)
+
+            # Download media
+            for message in messages:
+                try:
+                    # Check media type
+                    if hasattr(message.media, 'photo') and message.media.photo and include_photos:
+                        # Download photo
+                        path = await self.client.download_media(message, file=output_dir)
+                        if path:
+                            downloaded += 1
+                        else:
+                            skipped += 1
+                    elif hasattr(message.media, 'document') and message.media.document:
+                        # Check document attributes
+                        attributes = message.media.document.attributes
+                        is_video = any(getattr(attr, 'round_message', False) or getattr(
+                            attr, 'supports_streaming', False) for attr in attributes)
+                        is_audio = any(getattr(attr, 'voice', False) or getattr(
+                            attr, 'title', False) for attr in attributes)
+                        is_sticker = any(getattr(attr, 'sticker', False)
+                                         for attr in attributes)
+
+                        # Download based on type and user preferences
+                        if (is_video and include_videos) or \
+                           (is_audio and include_audio) or \
+                           (is_sticker and include_stickers) or \
+                           (not any([is_video, is_audio, is_sticker]) and include_documents):
+                            path = await self.client.download_media(message, file=output_dir)
+                            if path:
+                                downloaded += 1
+                            else:
+                                skipped += 1
+                        else:
+                            skipped += 1
+                    else:
+                        skipped += 1
+                except Exception as e:
+                    logger.exception(f"Error downloading media: {str(e)}")
+                    errors += 1
+
+                # Update progress
+                progress.update(task, advance=1)
+
+        # Log download results
+        logger.info(
+            f"Media download complete! Downloaded: {downloaded}, Skipped: {skipped}, Errors: {errors}")
+        console.print(f"[bold green]Media download complete![/bold green]")
+        console.print(
+            f"[bold]Downloaded:[/bold] [cyan]{downloaded}[/cyan] files")
+        console.print(
+            f"[bold]Skipped:[/bold] [yellow]{skipped}[/yellow] files")
+        if errors > 0:
+            console.print(f"[bold]Errors:[/bold] [red]{errors}[/red] files")
+
+        return output_dir
