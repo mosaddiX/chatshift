@@ -60,6 +60,8 @@ python chatshift.py
 
 The first time you run ChatShift, you'll need to authenticate with Telegram. Follow the prompts to enter the verification code sent to your Telegram account.
 
+For detailed usage instructions, see [USAGE.md](USAGE.md).
+
 ## Troubleshooting
 
 ### Authentication Issues

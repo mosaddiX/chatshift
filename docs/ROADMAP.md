@@ -73,6 +73,8 @@ This document outlines the planned development path for ChatShift.
 - ~~TUI interface~~ (Removed: Simplified CLI approach proved more reliable and maintainable)
 
 ## Future Ideas [after v1 released]
+
+For detailed information about current features, see [USAGE.md](USAGE.md) and [RELEASE_NOTES.md](RELEASE_NOTES.md).
 - GUI interface option
 - Export to different formats (HTML, PDF)
 - Chat visualization and statistics

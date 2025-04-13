@@ -2,6 +2,8 @@
 
 This guide provides instructions for testing the key features of ChatShift v1.0.0.
 
+For general usage instructions, see [USAGE.md](USAGE.md).
+
 ## Prerequisites
 
 Before testing, make sure you have:

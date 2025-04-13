@@ -1,6 +1,6 @@
 # ChatShift Usage Guide
 
-This guide explains how to use ChatShift to export your Telegram chats in WhatsApp format.
+This guide explains how to use ChatShift v1.0 to export your Telegram chats in various formats.
 
 ## Getting Started
 
@@ -24,10 +24,11 @@ pip install -r requirements.txt
 TELEGRAM_API_ID=your_api_id
 TELEGRAM_API_HASH=your_api_hash
 TELEGRAM_PHONE=your_phone_number
-TELEGRAM_USERNAME=your_username
 OUTPUT_FILE=telegram_chat_export.txt
 MESSAGE_LIMIT=0  # 0 for all messages
 ```
+
+For detailed installation instructions, see [INSTALL.md](INSTALL.md).
 
 ## Basic Usage
 
@@ -39,28 +40,93 @@ python chatshift.py
 The application will:
 1. Connect to Telegram using your credentials
 2. Display a list of your chats
-3. Let you select a chat to export
-4. Download and format the messages
-5. Save the formatted chat to a text file
+3. Let you select a chat or multiple chats to export
+4. Provide options for exporting messages, downloading media, or both
+5. Allow you to customize the export format and options
+6. Save the exported chat(s) to text file(s)
 
-## Understanding the Output
+## Main Features
 
-The exported chat will be formatted like WhatsApp chats:
-- Each message starts with a date and time stamp
-- Followed by the sender's name
-- Then the message content
-- Media files are indicated with `<Media omitted>`
-- Deleted messages show as `This message was deleted`
-- Edited messages have a suffix `<This message was edited>`
+### Single Chat Export
 
-Example:
+1. Select a chat from the list
+2. Choose one of the following options:
+   - Export messages only
+   - Download media only
+   - Export messages and download media
+3. Configure export options:
+   - Format template (WhatsApp, Telegram, Discord, Simple, Custom)
+   - Date range (optional)
+   - Message limit
+   - Include/exclude media types
+   - File naming options
+
+### Multiple Chat Export
+
+1. Select option 4 "Export multiple chats" from the action menu
+2. Select chats by entering their numbers
+3. Use 'v' to view all selected chats
+4. Enter 'd' when done selecting
+5. Configure export options
+
+### Media Downloads
+
+When downloading media, you can filter by type:
+- Photos
+- Videos
+- Documents
+- Audio files
+- Stickers
+- Voice messages
+
+### Export Statistics
+
+After exporting, you can generate statistics about your chats:
+- Message counts by type
+- Media counts by type
+- Top message senders
+- Date range and messages per day
+
+## Export Formats
+
+ChatShift supports multiple export formats:
+
+### WhatsApp Format
 ```
-01/06/23, 21:10 - Messages and calls are end-to-end encrypted. No one outside of this chat, not even WhatsApp, can read or listen to them. Tap to learn more.
-02/06/23, 18:51 - John Doe: Hello there!
-02/06/23, 18:52 - Jane Smith: Hi John, how are you?
-02/06/23, 18:53 - John Doe: <Media omitted>
-02/06/23, 18:54 - Jane Smith: This message was deleted
+01/06/23, 21:10 - John Doe: Hello there!
+01/06/23, 21:11 - Jane Smith: Hi John, how are you?
 ```
+
+### Telegram Format
+```
+[01/06/2023 21:10:15] John Doe: Hello there!
+[01/06/2023 21:11:30] Jane Smith: Hi John, how are you?
+```
+
+### Discord Format
+```
+John Doe | 01/06/2023 21:10
+Hello there!
+
+Jane Smith | 01/06/2023 21:11
+Hi John, how are you?
+```
+
+### Simple Format
+```
+John Doe (01/06/23 21:10): Hello there!
+Jane Smith (01/06/23 21:11): Hi John, how are you?
+```
+
+### Custom Format
+You can define your own format with placeholders for date, time, sender, and message content.
+
+## Keyboard Shortcuts
+
+- 'q' - Quit the application
+- 'r' - Refresh the chat list
+- 'd' - Done selecting (in multiple chat mode)
+- 'v' - View all selected chats (in multiple chat mode)
 
 ## Troubleshooting
 
@@ -70,10 +136,17 @@ If you encounter any issues:
 2. Verify your Telegram API credentials
 3. Make sure you have the required permissions to access the chats
 4. Check the console for error messages
+5. Try deleting the `.session` file and authenticating again
 
-## Coming in Future Versions
+For more detailed troubleshooting, see [INSTALL.md](INSTALL.md).
 
-- Customization options for the output format
-- Filtering messages by date, type, or content
-- Exporting multiple chats at once
-- Advanced search functionality
+## Future Features
+
+Planned for future versions:
+- GUI interface option
+- Export to HTML and PDF formats
+- Enhanced chat visualization and statistics
+- Integration with other messaging platforms
+- Scheduled exports
+
+For a complete roadmap, see [ROADMAP.md](ROADMAP.md).

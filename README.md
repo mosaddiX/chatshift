@@ -62,7 +62,8 @@ python chatshift.py
 
 Follow the interactive prompts to select and export your chats.
 
-For detailed usage instructions, feature guides, and testing procedures, see [USAGE.md](docs/USAGE.md).
+For detailed usage instructions, see [USAGE.md](docs/USAGE.md).
+For feature guides and testing procedures, see [TESTING.md](docs/TESTING.md).
 
 ## Version
 
@@ -89,7 +90,7 @@ For a complete list of features and version history, see [RELEASE_NOTES.md](docs
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
+Contributions are welcome! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines on how to contribute to this project.
 
 ## Developer
 

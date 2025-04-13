@@ -64,6 +64,9 @@ python chatshift.py
 
 Follow the interactive prompts to select and export your chats.
 
+For detailed installation instructions, see [INSTALL.md](INSTALL.md).
+For comprehensive usage guide, see [USAGE.md](USAGE.md).
+
 ## Known Issues
 - Very large chats (>10,000 messages) may experience slower performance
 - Some media types may not download correctly if they require special handling
