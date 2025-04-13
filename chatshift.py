@@ -118,7 +118,7 @@ FORMAT_TEMPLATES = {
         'media_placeholder': '<Media omitted>',
         'unknown_message_placeholder': '<Message>',
         'error_placeholder': '<Message format error>',
-        'edited_suffix': ' (edited)'
+        'edited_suffix': ' <This message was edited>'
     },
     'telegram': {
         'name': 'Telegram',
